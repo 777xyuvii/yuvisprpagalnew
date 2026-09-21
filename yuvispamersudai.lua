@@ -1,0 +1,513 @@
+local function cN(t)
+    pcall(function()
+        local s = game:GetService("TextChatService")
+        if s.ChatVersion == Enum.ChatVersion.TextChatService then
+            local c = s.TextChannels:FindFirstChild("RBXGeneral")
+            if c then c:SendAsync(t) end
+        else
+            game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(t, "All")
+        end
+    end)
+end
+
+local players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TextChatService = game:GetService("TextChatService")
+local lp = players.LocalPlayer
+
+local sg = Instance.new("ScreenGui")
+sg.Name = "YuviHubGui"
+sg.ResetOnSpawn = false
+
+local function gP()
+    local s, t = pcall(function() return gethui() end)
+    if s and t then return t end
+    s, t = pcall(function() return game:GetService("CoreGui") end)
+    if s and t then return t end
+    return lp:WaitForChild("PlayerGui")
+end
+
+sg.Parent = gP()
+
+for _, v in pairs(gP():GetChildren()) do
+    if v.Name == "YuviHubGui" and v ~= sg then
+        v:Destroy()
+    end
+end
+
+-- Batman Theme & Layout Colors
+local theme = {
+    bg = Color3.fromRGB(15, 15, 20),
+    header = Color3.fromRGB(25, 25, 32),
+    accent = Color3.fromRGB(255, 215, 0),
+    text = Color3.fromRGB(255, 255, 255),
+    label = Color3.fromRGB(170, 170, 185),
+    inputBg = Color3.fromRGB(22, 22, 30),
+    greenBtn = Color3.fromRGB(40, 160, 80),
+    redBtn = Color3.fromRGB(180, 40, 40),
+    toggleOff = Color3.fromRGB(60, 60, 75),
+    toggleOn = Color3.fromRGB(180, 120, 20)
+}
+
+local f = Instance.new("Frame")
+f.Size = UDim2.new(0, 440, 0, 460)
+f.Position = UDim2.new(0.5, -220, 0.3, 0)
+f.BackgroundColor3 = theme.bg
+f.BorderSizePixel = 0
+f.Draggable = true
+f.Active = true
+f.Visible = true
+f.Parent = sg
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = f
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(60, 50, 90)
+stroke.Thickness = 2
+stroke.Parent = f
+
+local tl = Instance.new("TextLabel")
+tl.Size = UDim2.new(1, 0, 0, 45)
+tl.BackgroundColor3 = theme.header
+tl.Text = "  🦇 YUVI S1R TARGET BANG VIP"
+tl.TextColor3 = theme.accent
+tl.TextSize = 16
+tl.Font = Enum.Font.GothamBold
+tl.TextXAlignment = Enum.TextXAlignment.Left
+tl.Parent = f
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 12)
+titleCorner.Parent = tl
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -38, 0, 8)
+closeBtn.BackgroundColor3 = Color3.fromRGB(230, 50, 50)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.TextSize = 14
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Parent = f
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = closeBtn
+
+local fl = Instance.new("TextButton")
+fl.Size = UDim2.new(0, 90, 0, 45)
+fl.Position = UDim2.new(0.9, 0, 0.75, 0)
+fl.BackgroundColor3 = theme.header
+fl.Text = "YUVI S1R"
+fl.TextColor3 = theme.accent
+fl.TextSize = 14
+fl.Font = Enum.Font.GothamBold
+fl.Visible = false
+fl.Parent = sg
+
+local flCorner = Instance.new("UICorner")
+flCorner.CornerRadius = UDim.new(0, 8)
+flCorner.Parent = fl
+
+closeBtn.MouseButton1Click:Connect(function()
+    f.Visible = false
+    fl.Visible = true
+end)
+
+fl.MouseButton1Click:Connect(function()
+    f.Visible = true
+    fl.Visible = false
+end)
+
+getgenv().Target = ""
+getgenv().Symbol = "_"
+getgenv().Count = 150
+getgenv().Delay = 1.2
+getgenv().Enabled = false
+getgenv().AntiFlingEnabled = false
+getgenv().BurstMode = false
+
+local ms = {
+    "tmx mare zeus aur neo🐍🦅",
+    "tmx maru udte udte🤣🤣🤣🤣🤣",
+    "yuvi papa on top h pgl",
+    "gulaam tmx uth",
+    "tmx pagal hogai ",
+    "tmx cvr le gulaam"
+}
+local cM = 1
+local y = 60
+
+local function aF(l, d, cb)
+    local la = Instance.new("TextLabel")
+    la.Size = UDim2.new(0, 70, 0, 30)
+    la.Position = UDim2.new(0, 20, 0, y)
+    la.BackgroundTransparency = 1
+    la.Text = l
+    la.TextColor3 = theme.label
+    la.TextSize = 14
+    la.Font = Enum.Font.GothamMedium
+    la.TextXAlignment = Enum.TextXAlignment.Left
+    la.Parent = f
+
+    local b = Instance.new("TextBox")
+    b.Size = UDim2.new(0, 180, 0, 30)
+    b.Position = UDim2.new(0, 95, 0, y)
+    b.Text = tostring(d)
+    b.PlaceholderText = "Enter Username"
+    b.BackgroundColor3 = theme.inputBg
+    b.TextColor3 = theme.text
+    b.TextSize = 14
+    b.Font = Enum.Font.Gotham
+    b.Parent = f
+
+    local bCorner = Instance.new("UICorner")
+    bCorner.CornerRadius = UDim.new(0, 6)
+    bCorner.Parent = b
+
+    b.FocusLost:Connect(function()
+        cb(b.Text)
+    end)
+    y = y + 40
+end
+
+aF("ENEMY", getgenv().Target, function(v) getgenv().Target = v end)
+aF("Symbol", getgenv().Symbol, function(v) getgenv().Symbol = v end)
+aF("Count", getgenv().Count, function(v) getgenv().Count = tonumber(v) or 150 end)
+aF("Speed", getgenv().Delay, function(v) getgenv().Delay = tonumber(v) or 1.2 end)
+
+-- Anti-Fling Toggle Button
+local afBtn = Instance.new("TextButton")
+afBtn.Size = UDim2.new(0, 400, 0, 32)
+afBtn.Position = UDim2.new(0, 20, 0, 220)
+afBtn.BackgroundColor3 = theme.toggleOff
+afBtn.Text = "🛡️ Anti-Fling: OFF"
+afBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+afBtn.TextSize = 13
+afBtn.Font = Enum.Font.GothamBold
+afBtn.Parent = f
+
+local afCorner = Instance.new("UICorner")
+afCorner.CornerRadius = UDim.new(0, 8)
+afCorner.Parent = afBtn
+
+afBtn.MouseButton1Click:Connect(function()
+    getgenv().AntiFlingEnabled = not getgenv().AntiFlingEnabled
+    if getgenv().AntiFlingEnabled then
+        afBtn.Text = "🛡️ Anti-Fling: ON"
+        afBtn.BackgroundColor3 = theme.toggleOn
+    else
+        afBtn.Text = "🛡️ Anti-Fling: OFF"
+        afBtn.BackgroundColor3 = theme.toggleOff
+    end
+end)
+
+-- Burst Mode Toggle Button
+local burstBtn = Instance.new("TextButton")
+burstBtn.Size = UDim2.new(0, 400, 0, 32)
+burstBtn.Position = UDim2.new(0, 20, 0, 258)
+burstBtn.BackgroundColor3 = theme.toggleOff
+burstBtn.Text = "⚡ Burst Mode (5 Msgs): OFF"
+burstBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+burstBtn.TextSize = 13
+burstBtn.Font = Enum.Font.GothamBold
+burstBtn.Parent = f
+
+local burstCorner = Instance.new("UICorner")
+burstCorner.CornerRadius = UDim.new(0, 8)
+burstCorner.Parent = burstBtn
+
+burstBtn.MouseButton1Click:Connect(function()
+    getgenv().BurstMode = not getgenv().BurstMode
+    if getgenv().BurstMode then
+        burstBtn.Text = "⚡ Burst Mode (5 Msgs): ON"
+        burstBtn.BackgroundColor3 = theme.toggleOn
+    else
+        burstBtn.Text = "⚡ Burst Mode (5 Msgs): OFF"
+        burstBtn.BackgroundColor3 = theme.toggleOff
+    end
+end)
+
+-- Status Info Label
+local infoLbl = Instance.new("TextLabel")
+infoLbl.Size = UDim2.new(0, 400, 0, 30)
+infoLbl.Position = UDim2.new(0, 20, 0, 296)
+infoLbl.BackgroundTransparency = 1
+infoLbl.Text = "💡 Enter target username above to start bang."
+infoLbl.TextColor3 = theme.accent
+infoLbl.TextSize = 12
+infoLbl.Font = Enum.Font.GothamItalic
+infoLbl.Parent = f
+
+-- Anti-Fling Variables
+local MAX_SPEED = 120
+local MAX_ANGULAR = 80
+local MAX_DISTANCE = 50
+local CHECK_INTERVAL = 0.05
+local RECOVERY_TIME = 0.40
+
+local character, humanoid, root
+local safeCFrame
+local timer = 0
+local recoveryUntil = 0
+
+local function disableCollision(char)
+    for _, obj in ipairs(char:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            obj.CanCollide = false
+        end
+    end
+end
+
+local function watchCharacterCollision(char)
+    disableCollision(char)
+    char.DescendantAdded:Connect(function(obj)
+        if obj:IsA("BasePart") then
+            obj.CanCollide = false
+        end
+    end)
+end
+
+local function setupCharacter(char)
+    character = char
+    humanoid = char:WaitForChild("Humanoid")
+    root = char:WaitForChild("HumanoidRootPart")
+    watchCharacterCollision(char)
+    safeCFrame = root.CFrame
+    timer = 0
+    recoveryUntil = 0
+end
+
+if lp.Character then
+    setupCharacter(lp.Character)
+end
+lp.CharacterAdded:Connect(setupCharacter)
+
+RunService.Heartbeat:Connect(function(dt)
+    if not getgenv().AntiFlingEnabled then return end
+    if not character or not character.Parent or not humanoid or humanoid.Health <= 0 or not root or not root.Parent then
+        return
+    end
+
+    timer += dt
+    if timer < CHECK_INTERVAL then return end
+    timer = 0
+
+    local now = os.clock()
+    local velocity = root.AssemblyLinearVelocity
+    local angular = root.AssemblyAngularVelocity
+    local speed = velocity.Magnitude
+    local spin = angular.Magnitude
+    local distance = safeCFrame and (root.Position - safeCFrame.Position).Magnitude or 0
+
+    local flingDetected = speed > MAX_SPEED or spin > MAX_ANGULAR or distance > MAX_DISTANCE
+
+    if flingDetected then
+        recoveryUntil = now + RECOVERY_TIME
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+        if safeCFrame then root.CFrame = safeCFrame end
+        humanoid:Move(Vector3.zero, false)
+        pcall(function()
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+            humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
+            humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+        end)
+    elseif now < recoveryUntil then
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+        humanoid:Move(Vector3.zero, false)
+    else
+        safeCFrame = root.CFrame
+    end
+end)
+
+-- START & STOP Buttons
+local sB = Instance.new("TextButton")
+sB.Size = UDim2.new(0, 190, 0, 40)
+sB.Position = UDim2.new(0, 20, 0, 340)
+sB.BackgroundColor3 = theme.greenBtn
+sB.Text = "▶ START"
+sB.TextColor3 = Color3.fromRGB(255, 255, 255)
+sB.TextSize = 16
+sB.Font = Enum.Font.GothamBold
+sB.Parent = f
+
+local sBCorner = Instance.new("UICorner")
+sBCorner.CornerRadius = UDim.new(0, 8)
+sBCorner.Parent = sB
+
+local stopB = Instance.new("TextButton")
+stopB.Size = UDim2.new(0, 190, 0, 40)
+stopB.Position = UDim2.new(0, 230, 0, 340)
+stopB.BackgroundColor3 = theme.redBtn
+stopB.Text = "⏹ STOP"
+stopB.TextColor3 = Color3.fromRGB(255, 255, 255)
+stopB.TextSize = 16
+stopB.Font = Enum.Font.GothamBold
+stopB.Parent = f
+
+local stopBCorner = Instance.new("UICorner")
+stopBCorner.CornerRadius = UDim.new(0, 8)
+stopBCorner.Parent = stopB
+
+-- Animation & Target Bang Logic
+local activeAnimTrack = nil
+
+local function updateHeadTag(state)
+    pcall(function()
+        local char = lp.Character
+        if not char then return end
+        local head = char:FindFirstChild("Head")
+        if not head then return end
+        
+        if state then
+            local existing = head:FindFirstChild("YuviSpamTag")
+            if existing then existing:Destroy() end
+            
+            local bg = Instance.new("BillboardGui")
+            bg.Name = "YuviSpamTag"
+            bg.Size = UDim2.new(0, 220, 0, 50)
+            bg.StudsOffset = Vector3.new(0, 2.5, 0)
+            bg.AlwaysOnTop = true
+            bg.Parent = head
+            
+            local txt = Instance.new("TextLabel")
+            txt.Size = UDim2.new(1, 0, 1, 0)
+            txt.BackgroundTransparency = 1
+            txt.Text = "YUVI S1R TARGET BANG 👑"
+            txt.TextColor3 = Color3.fromRGB(255, 215, 0)
+            txt.TextSize = 14
+            txt.Font = Enum.Font.GothamBold
+            txt.Parent = bg
+        else
+            local existing = head:FindFirstChild("YuviSpamTag")
+            if existing then existing:Destroy() end
+        end
+    end)
+end
+
+local function playJasonDance(state)
+    pcall(function()
+        local char = lp.Character
+        if not char then return end
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+        local animator = hum:FindFirstChildOfClass("Animator")
+        if not animator then
+            animator = Instance.new("Animator")
+            animator.Parent = hum
+        end
+
+        if state then
+            if activeAnimTrack then
+                activeAnimTrack:Stop()
+                activeAnimTrack = nil
+            end
+            local anim = Instance.new("Animation")
+            anim.AnimationId = "rbxassetid://118800260323139" -- Jason Voorhees Dance ID
+            activeAnimTrack = animator:LoadAnimation(anim)
+            activeAnimTrack.Looped = true
+            activeAnimTrack:Play()
+            activeAnimTrack:AdjustSpeed(1.2)
+        else
+            if activeAnimTrack then
+                activeAnimTrack:Stop()
+                activeAnimTrack = nil
+            end
+        end
+    end)
+end
+
+-- Automatic Target Following & Bang Loop
+RunService.RenderStepped:Connect(function()
+    if not getgenv().Enabled then return end
+    pcall(function()
+        local targetName = string.lower(tostring(getgenv().Target))
+        if targetName == "" or targetName == "name" then return end
+        
+        local targetChar = nil
+        for _, p in ipairs(players:GetPlayers()) do
+            if p ~= lp and (string.find(string.lower(p.Name), targetName) or string.find(string.lower(p.DisplayName), targetName)) then
+                if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    targetChar = p.Character
+                    break
+                end
+            end
+        end
+        
+        if targetChar and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            local myRoot = lp.Character.HumanoidRootPart
+            local targetRoot = targetChar.HumanoidRootPart
+            -- Target ke paas position lock karke bang effect dena
+            myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 1.1)
+        end
+    end)
+end)
+
+sB.MouseButton1Click:Connect(function()
+    local t = string.lower(tostring(getgenv().Target))
+    if t == "" or t == "name" then
+        infoLbl.Text = "⚠️ Please enter a valid Target Username first!"
+        infoLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
+        return
+    end
+
+    getgenv().Enabled = true
+    sB.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
+    stopB.BackgroundColor3 = theme.redBtn
+    infoLbl.Text = "🔥 Target Bang & Dance Active!"
+    infoLbl.TextColor3 = theme.greenBtn
+    updateHeadTag(true)
+    playJasonDance(true)
+end)
+
+stopB.MouseButton1Click:Connect(function()
+    getgenv().Enabled = false
+    sB.BackgroundColor3 = theme.greenBtn
+    stopB.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+    infoLbl.Text = "⏹ Stopped."
+    infoLbl.TextColor3 = theme.accent
+    updateHeadTag(false)
+    playJasonDance(false)
+end)
+
+task.spawn(function()
+    while true do
+        if getgenv().Enabled and #ms > 0 then
+            local targetName = string.lower(tostring(getgenv().Target))
+            if targetName ~= "" and targetName ~= "name" then
+                if getgenv().BurstMode then
+                    for i = 1, 5 do
+                        local m = ms[cM]
+                        if m and m ~= "" then
+                            local p = string.rep(getgenv().Symbol, getgenv().Count).." "..getgenv().Target.." > "..m
+                            cN(p)
+                        end
+                        cM = (cM % #ms) + 1
+                        task.wait(0.05)
+                    end
+                    task.wait(getgenv().Delay)
+                else
+                    local m = ms[cM]
+                    if m and m ~= "" then
+                        local p = string.rep(getgenv().Symbol, getgenv().Count).." "..getgenv().Target.." > "..m
+                        cN(p)
+                    end
+                    cM = (cM % #ms) + 1
+                    task.wait(getgenv().Delay)
+                end
+            else
+                task.wait(0.5)
+            end
+        else
+            task.wait(0.1)
+        end
+    end
+end)
+
+cN("|| YUVI S1R 
+ 👑🐍🦅 ||")
