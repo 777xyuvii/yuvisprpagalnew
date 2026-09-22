@@ -39,7 +39,7 @@ local theme = {
     bg = Color3.fromRGB(15, 15, 20),
     header = Color3.fromRGB(25, 25, 32),
     accent = Color3.fromRGB(255, 215, 0), -- Default Gold Title
-    ambient = Color3.fromRGB(147, 112, 219), -- Purple for Ambient
+    ambient = Color3.fromRGB(147, 112, 219), -- Purple for Ambient Corner
     text = Color3.fromRGB(255, 255, 255),
     label = Color3.fromRGB(170, 170, 185),
     inputBg = Color3.fromRGB(22, 22, 30),
@@ -63,9 +63,9 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = f
 
--- Purple Ambient Glow (Outer)
+-- Purple Ambient Glow (Stroke)
 local stroke = Instance.new("UIStroke")
-stroke.Color = theme.ambient -- Applied Purple Ambient
+stroke.Color = theme.ambient 
 stroke.Thickness = 2
 stroke.Parent = f
 
@@ -73,7 +73,7 @@ local tl = Instance.new("TextLabel")
 tl.Size = UDim2.new(1, 0, 0, 45)
 tl.BackgroundColor3 = theme.header
 tl.Text = "  🦇 YUVI S1R TARGET BANG VIP"
-tl.TextColor3 = theme.accent -- Kept Title Gold
+tl.TextColor3 = theme.accent 
 tl.TextSize = 16
 tl.Font = Enum.Font.GothamBold
 tl.TextXAlignment = Enum.TextXAlignment.Left
@@ -239,22 +239,22 @@ infoLbl.TextSize = 12
 infoLbl.Font = Enum.Font.GothamItalic
 infoLbl.Parent = f
 
--- Anti-Fling Variables (Optimized)
-local MAX_SPEED = 100 -- Lowered for better detection
-local MAX_ANGULAR = 60 -- Lowered for better detection
+-- Anti-Fling Variables
+local MAX_SPEED = 100
+local MAX_ANGULAR = 60
 local MAX_DISTANCE = 45
-local CHECK_INTERVAL = 0.08 -- Slightly relaxed interval
-local RECOVERY_TIME = 0.50 -- Increased recovery time
+local CHECK_INTERVAL = 0.08
+local RECOVERY_TIME = 0.50
 
 local character, humanoid, root
 local safeCFrame
 local timer = 0
 local recoveryUntil = 0
-local isRecovering = false -- Added state flag
+local isRecovering = false
 
 local function disableCollision(char)
     for _, obj in ipairs(char:GetDescendants()) do
-        if obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then -- Optimization
+        if obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then
             obj.CanCollide = false
         end
     end
@@ -287,7 +287,7 @@ lp.CharacterAdded:Connect(setupCharacter)
 
 RunService.Heartbeat:Connect(function(dt)
     if not getgenv().AntiFlingEnabled then 
-        isRecovering = false -- Reset flag when disabled
+        isRecovering = false
         return 
     end
     if not character or not character.Parent or not humanoid or humanoid.Health <= 0 or not root or not root.Parent then
@@ -310,16 +310,11 @@ RunService.Heartbeat:Connect(function(dt)
     if flingDetected and not isRecovering then
         isRecovering = true
         recoveryUntil = now + RECOVERY_TIME
-        
-        -- Freeze Velocity (Crucial for stopping fling)
         root.AssemblyLinearVelocity = Vector3.zero
         root.AssemblyAngularVelocity = Vector3.zero
-        
-        -- Teleport to Last Safe CFrame
         if safeCFrame then 
-            root.CFrame = safeCFrame * CFrame.new(0, 0.5, 0) -- Slight offset to prevent ground collision
+            root.CFrame = safeCFrame * CFrame.new(0, 0.5, 0)
         end
-        
         humanoid:Move(Vector3.zero, false)
         pcall(function()
             humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
@@ -328,12 +323,10 @@ RunService.Heartbeat:Connect(function(dt)
             humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
         end)
     elseif now < recoveryUntil and isRecovering then
-        -- Ensure freeze during recovery phase
         root.AssemblyLinearVelocity = Vector3.zero
         root.AssemblyAngularVelocity = Vector3.zero
         humanoid:Move(Vector3.zero, false)
     else
-        -- Reset state and update safe CFrame if not recovering
         isRecovering = false
         safeCFrame = root.CFrame
     end
@@ -387,4 +380,136 @@ local function updateHeadTag(state)
             bg.AlwaysOnTop = true
             bg.Parent = head
             
-            local
+            local txt = Instance.new("TextLabel")
+            txt.Size = UDim2.new(1, 0, 1, 0)
+            txt.BackgroundTransparency = 1
+            txt.Text = "YUVI S1R TARGET BANG 👑"
+            txt.TextColor3 = Color3.fromRGB(255, 215, 0)
+            txt.TextSize = 14
+            txt.Font = Enum.Font.GothamBold
+            txt.Parent = bg
+        else
+            local existing = head:FindFirstChild("YuviSpamTag")
+            if existing then existing:Destroy() end
+        end
+    end)
+end
+
+local function playJasonDance(state)
+    pcall(function()
+        local char = lp.Character
+        if not char then return end
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+        local animator = hum:FindFirstChildOfClass("Animator")
+        if not animator then
+            animator = Instance.new("Animator")
+            animator.Parent = hum
+        end
+
+        if state then
+            if activeAnimTrack then
+                activeAnimTrack:Stop()
+                activeAnimTrack = nil
+            end
+            local anim = Instance.new("Animation")
+            anim.AnimationId = "rbxassetid://118800260323139"
+            activeAnimTrack = animator:LoadAnimation(anim)
+            activeAnimTrack.Looped = true
+            activeAnimTrack:Play()
+            activeAnimTrack:AdjustSpeed(1.2)
+        else
+            if activeAnimTrack then
+                activeAnimTrack:Stop()
+                activeAnimTrack = nil
+            end
+        end
+    end)
+end
+
+RunService.RenderStepped:Connect(function()
+    if not getgenv().Enabled then return end
+    pcall(function()
+        local targetName = string.lower(tostring(getgenv().Target))
+        if targetName == "" or targetName == "name" then return end
+        
+        local targetChar = nil
+        for _, p in ipairs(players:GetPlayers()) do
+            if p ~= lp and (string.find(string.lower(p.Name), targetName) or string.find(string.lower(p.DisplayName), targetName)) then
+                if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    targetChar = p.Character
+                    break
+                end
+            end
+        end
+        
+        if targetChar and lp.Character and lp.Character:FindFirstChild("HumanoidRootPart") then
+            local myRoot = lp.Character.HumanoidRootPart
+            local targetRoot = targetChar.HumanoidRootPart
+            myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 1.1)
+        end
+    end)
+end)
+
+sB.MouseButton1Click:Connect(function()
+    local t = string.lower(tostring(getgenv().Target))
+    if t == "" or t == "name" then
+        infoLbl.Text = "⚠️ Please enter a valid Target Username first!"
+        infoLbl.TextColor3 = Color3.fromRGB(255, 80, 80)
+        return
+    end
+
+    getgenv().Enabled = true
+    sB.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
+    stopB.BackgroundColor3 = theme.redBtn
+    infoLbl.Text = "🔥 Target Bang & Dance Active!"
+    infoLbl.TextColor3 = theme.greenBtn
+    updateHeadTag(true)
+    playJasonDance(true)
+end)
+
+stopB.MouseButton1Click:Connect(function()
+    getgenv().Enabled = false
+    sB.BackgroundColor3 = theme.greenBtn
+    stopB.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+    infoLbl.Text = "⏹ Stopped."
+    infoLbl.TextColor3 = theme.accent
+    updateHeadTag(false)
+    playJasonDance(false)
+end)
+
+task.spawn(function()
+    while true do
+        if getgenv().Enabled and #ms > 0 then
+            local targetName = string.lower(tostring(getgenv().Target))
+            if targetName ~= "" and targetName ~= "name" then
+                if getgenv().BurstMode then
+                    for i = 1, 5 do
+                        local m = ms[cM]
+                        if m and m ~= "" then
+                            local p = string.rep(getgenv().Symbol, getgenv().Count).." "..getgenv().Target.." > "..m
+                            cN(p)
+                        end
+                        cM = (cM % #ms) + 1
+                        task.wait(0.05)
+                    end
+                    task.wait(getgenv().Delay)
+                else
+                    local m = ms[cM]
+                    if m and m ~= "" then
+                        local p = string.rep(getgenv().Symbol, getgenv().Count).." "..getgenv().Target.." > "..m
+                        cN(p)
+                    end
+                    cM = (cM % #ms) + 1
+                    task.wait(getgenv().Delay)
+                end
+            else
+                task.wait(0.5)
+            end
+        else
+            task.wait(0.1)
+        end
+    end
+end)
+
+cN("|| YUVI S1R 👑🐍🦅 ||")
