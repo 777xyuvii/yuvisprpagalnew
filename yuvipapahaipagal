@@ -34,24 +34,23 @@ for _, v in pairs(gP():GetChildren()) do
     end
 end
 
--- Batman Theme & Layout Colors (With Purple Ambient Glow)
+-- Theme & Layout Colors
 local theme = {
-    bg = Color3.fromRGB(15, 15, 20),
-    header = Color3.fromRGB(25, 25, 32),
-    accent = Color3.fromRGB(255, 215, 0), -- Gold Title
-    ambient = Color3.fromRGB(147, 112, 219), -- Purple Ambient Light
+    bg = Color3.fromRGB(8, 8, 12),
+    header = Color3.fromRGB(15, 15, 22),
+    ambient = Color3.fromRGB(220, 30, 255),
     text = Color3.fromRGB(255, 255, 255),
     label = Color3.fromRGB(170, 170, 185),
-    inputBg = Color3.fromRGB(22, 22, 30),
+    inputBg = Color3.fromRGB(14, 14, 20),
     greenBtn = Color3.fromRGB(40, 160, 80),
     redBtn = Color3.fromRGB(180, 40, 40),
-    toggleOff = Color3.fromRGB(60, 60, 75),
+    toggleOff = Color3.fromRGB(45, 45, 60),
     toggleOn = Color3.fromRGB(180, 120, 20)
 }
 
 local f = Instance.new("Frame")
-f.Size = UDim2.new(0, 440, 0, 460)
-f.Position = UDim2.new(0.5, -220, 0.3, 0)
+f.Size = UDim2.new(0, 440, 0, 530)
+f.Position = UDim2.new(0.5, -220, 0.25, 0)
 f.BackgroundColor3 = theme.bg
 f.BorderSizePixel = 0
 f.Draggable = true
@@ -63,10 +62,9 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = f
 
--- Purple Ambient Corner Glow (UIStroke + UICorner inside it)
 local stroke = Instance.new("UIStroke")
 stroke.Color = theme.ambient 
-stroke.Thickness = 2.5
+stroke.Thickness = 3
 stroke.Parent = f
 
 local strokeCorner = Instance.new("UICorner")
@@ -76,12 +74,21 @@ strokeCorner.Parent = stroke
 local tl = Instance.new("TextLabel")
 tl.Size = UDim2.new(1, 0, 0, 45)
 tl.BackgroundColor3 = theme.header
-tl.Text = "  🦇 YUVI S1R TARGET BANG VIP"
-tl.TextColor3 = theme.accent 
+tl.Text = "  🦇 YUVI DEVTA 🦅🐍"
+tl.TextColor3 = Color3.fromRGB(255, 255, 255)
 tl.TextSize = 16
 tl.Font = Enum.Font.GothamBold
 tl.TextXAlignment = Enum.TextXAlignment.Left
 tl.Parent = f
+
+-- RGB Color Loop for Title Text
+task.spawn(function()
+    while tl and tl.Parent do
+        local hue = tick() % 5 / 5
+        tl.TextColor3 = Color3.fromHSV(hue, 1, 1)
+        task.wait(0.05)
+    end
+end)
 
 local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0, 12)
@@ -106,11 +113,20 @@ fl.Size = UDim2.new(0, 90, 0, 45)
 fl.Position = UDim2.new(0.9, 0, 0.75, 0)
 fl.BackgroundColor3 = theme.header
 fl.Text = "YUVI S1R"
-fl.TextColor3 = theme.accent
+fl.TextColor3 = Color3.fromRGB(255, 255, 255)
 fl.TextSize = 14
 fl.Font = Enum.Font.GothamBold
 fl.Visible = false
 fl.Parent = sg
+
+-- RGB Color Loop for Floating Button
+task.spawn(function()
+    while fl and fl.Parent do
+        local hue = tick() % 5 / 5
+        fl.TextColor3 = Color3.fromHSV(hue, 1, 1)
+        task.wait(0.05)
+    end
+end)
 
 local flCorner = Instance.new("UICorner")
 flCorner.CornerRadius = UDim.new(0, 8)
@@ -235,15 +251,14 @@ end)
 
 local infoLbl = Instance.new("TextLabel")
 infoLbl.Size = UDim2.new(0, 400, 0, 30)
-infoLbl.Position = UDim2.new(0, 20, 0, 296)
+infoLbl.Position = UDim2.new(0, 20, 0, 300)
 infoLbl.BackgroundTransparency = 1
 infoLbl.Text = "💡 Enter target username above to start bang."
-infoLbl.TextColor3 = theme.accent
+infoLbl.TextColor3 = Color3.fromRGB(220, 30, 255)
 infoLbl.TextSize = 12
 infoLbl.Font = Enum.Font.GothamItalic
 infoLbl.Parent = f
 
--- Anti-Fling Variables
 local MAX_SPEED = 100
 local MAX_ANGULAR = 60
 local MAX_DISTANCE = 45
@@ -336,10 +351,9 @@ RunService.Heartbeat:Connect(function(dt)
     end
 end)
 
--- START & STOP Buttons (Restored)
 local sB = Instance.new("TextButton")
-sB.Size = UDim2.new(0, 190, 0, 40)
-sB.Position = UDim2.new(0, 20, 0, 340)
+sB.Size = UDim2.new(0, 190, 0, 42)
+sB.Position = UDim2.new(0, 20, 0, 345)
 sB.BackgroundColor3 = theme.greenBtn
 sB.Text = "▶ START"
 sB.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -352,8 +366,8 @@ sBCorner.CornerRadius = UDim.new(0, 8)
 sBCorner.Parent = sB
 
 local stopB = Instance.new("TextButton")
-stopB.Size = UDim2.new(0, 190, 0, 40)
-stopB.Position = UDim2.new(0, 230, 0, 340)
+stopB.Size = UDim2.new(0, 190, 0, 42)
+stopB.Position = UDim2.new(0, 230, 0, 345)
 stopB.BackgroundColor3 = theme.redBtn
 stopB.Text = "⏹ STOP"
 stopB.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -388,8 +402,8 @@ local function updateHeadTag(state)
             local txt = Instance.new("TextLabel")
             txt.Size = UDim2.new(1, 0, 1, 0)
             txt.BackgroundTransparency = 1
-            txt.Text = "YUVI S1R TARGET BANG 👑"
-            txt.TextColor3 = Color3.fromRGB(255, 215, 0)
+            txt.Text = "YUVI DEVTA TARGET BANG 👑"
+            txt.TextColor3 = Color3.fromRGB(220, 30, 255)
             txt.TextSize = 14
             txt.Font = Enum.Font.GothamBold
             txt.Parent = bg
@@ -478,7 +492,7 @@ stopB.MouseButton1Click:Connect(function()
     sB.BackgroundColor3 = theme.greenBtn
     stopB.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
     infoLbl.Text = "⏹ Stopped."
-    infoLbl.TextColor3 = theme.accent
+    infoLbl.TextColor3 = theme.ambient
     updateHeadTag(false)
     playJasonDance(false)
 end)
@@ -517,4 +531,4 @@ task.spawn(function()
     end
 end)
 
-cN("|| YUVI S1R 👑🐍🦅 ||")
+cN("|| YUVI DEVTA 👑🐍🦅 ||")
