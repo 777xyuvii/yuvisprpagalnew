@@ -11,7 +11,7 @@ end
 
 -- Main ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SumitKaBaapYuviGUI"
+screenGui.Name = "DEVTA CHATS 🦅🐍"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
@@ -35,7 +35,7 @@ corner.Parent = mainFrame
 local titleBar = Instance.new("TextLabel")
 titleBar.Size = UDim2.new(1, 0, 0, 50)
 titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
-titleBar.Text = "   Yuvi Script Dashboard"
+titleBar.Text = "    Yuvi Script Dashboard"
 titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleBar.TextSize = 18
 titleBar.Font = Enum.Font.SourceSansBold
@@ -110,7 +110,6 @@ local contentCorner = Instance.new("UICorner")
 contentCorner.CornerRadius = UDim.new(0, 8)
 contentCorner.Parent = contentArea
 
--- Function to clear content area before loading a new section
 local function clearContent()
     for _, child in ipairs(contentArea:GetChildren()) do
         if not child:IsA("UICorner") then
@@ -119,11 +118,18 @@ local function clearContent()
     end
 end
 
--- 1. CHAT SECTION (Asli working UI chat box)
+-- Shared BindableEvent for script-to-script communication in the same server
+local chatEvent = ReplicatedStorage:FindFirstChild("YuviScriptPrivateChatEvent")
+if not chatEvent then
+    chatEvent = Instance.new("BindableEvent")
+    chatEvent.Name = "YuviScriptPrivateChatEvent"
+    chatEvent.Parent = ReplicatedStorage
+end
+
+-- 1. CHAT SECTION (Avatar Circle + Name + Message Box)
 local function loadChatSection()
     clearContent()
     
-    -- Chat History Display Box
     local chatScroll = Instance.new("ScrollingFrame")
     chatScroll.Size = UDim2.new(1, -20, 1, -70)
     chatScroll.Position = UDim2.new(0, 10, 0, 10)
@@ -134,16 +140,15 @@ local function loadChatSection()
     
     local chatList = Instance.new("UIListLayout")
     chatList.SortOrder = Enum.SortOrder.LayoutOrder
-    chatList.Padding = UDim.new(0, 5)
+    chatList.Padding = UDim.new(0, 8)
     chatList.Parent = chatScroll
     
-    -- Text Input Box to type message
     local textBox = Instance.new("TextBox")
     textBox.Size = UDim2.new(1, -90, 0, 40)
     textBox.Position = UDim2.new(0, 10, 1, -50)
     textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
     textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textBox.PlaceholderText = "Yahan message type karein..."
+    textBox.PlaceholderText = "PVT MSG TYPE HERE..."
     textBox.Text = ""
     textBox.TextSize = 14
     textBox.Font = Enum.Font.SourceSans
@@ -154,7 +159,6 @@ local function loadChatSection()
     boxCorner.CornerRadius = UDim.new(0, 6)
     boxCorner.Parent = textBox
     
-    -- Send Button
     local sendBtn = Instance.new("TextButton")
     sendBtn.Size = UDim2.new(0, 70, 0, 40)
     sendBtn.Position = UDim2.new(1, -80, 1, -50)
@@ -169,42 +173,59 @@ local function loadChatSection()
     sendCorner.CornerRadius = UDim.new(0, 6)
     sendCorner.Parent = sendBtn
     
-    -- Function to add message to UI chat box
-    local function addMessage(senderName, msgText)
+    local function addChatMessage(senderName, senderUserId, msgText)
+        local msgContainer = Instance.new("Frame")
+        msgContainer.Size = UDim2.new(1, 0, 0, 45)
+        msgContainer.BackgroundTransparency = 1
+        msgContainer.Parent = chatScroll
+        
+        local avatarImg = Instance.new("ImageLabel")
+        avatarImg.Size = UDim2.new(0, 38, 0, 38)
+        avatarImg.Position = UDim2.new(0, 0, 0, 3)
+        avatarImg.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+        avatarImg.Image = Players:GetUserThumbnailAsync(senderUserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size42x42)
+        avatarImg.Parent = msgContainer
+        
+        local avatarCorner = Instance.new("UICorner")
+        avatarCorner.CornerRadius = UDim.new(1, 0)
+        avatarCorner.Parent = avatarImg
+        
+        local textHolder = Instance.new("Frame")
+        textHolder.Size = UDim2.new(1, -48, 1, 0)
+        textHolder.Position = UDim2.new(0, 48, 0, 0)
+        textHolder.BackgroundTransparency = 1
+        textHolder.Parent = msgContainer
+        
+        local nameLabel = Instance.new("TextLabel")
+        nameLabel.Size = UDim2.new(1, 0, 0, 18)
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
+        nameLabel.TextSize = 14
+        nameLabel.Font = Enum.Font.SourceSansBold
+        nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        nameLabel.Text = senderName
+        nameLabel.Parent = textHolder
+        
         local msgLabel = Instance.new("TextLabel")
-        msgLabel.Size = UDim2.new(1, 0, 0, 25)
+        msgLabel.Size = UDim2.new(1, 0, 0, 24)
+        msgLabel.Position = UDim2.new(0, 0, 0, 18)
         msgLabel.BackgroundTransparency = 1
         msgLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
         msgLabel.TextSize = 14
         msgLabel.Font = Enum.Font.SourceSans
         msgLabel.TextXAlignment = Enum.TextXAlignment.Left
         msgLabel.TextWrapped = true
-        msgLabel.Text = "[" .. senderName .. "]: " .. msgText
-        msgLabel.Parent = chatScroll
+        msgLabel.Text = msgText
+        msgLabel.Parent = textHolder
         
-        chatScroll.CanvasSize = UDim2.new(0, 0, 0, chatList.AbsoluteContentSize.Y)
+        chatScroll.CanvasSize = UDim2.new(0, 0, 0, chatList.AbsoluteContentSize.Y + 10)
     end
     
-    -- Send message logic (Ye game ki normal chat mein bhi bhejega aur UI me bhi dikhayega)
     local function sendMessage()
         if textBox.Text ~= "" then
             local textToSend = textBox.Text
             textBox.Text = ""
-            
-            -- Send to actual Roblox Game Chat if possible
-            pcall(function()
-                local TextChatService = game:GetService("TextChatService")
-                if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
-                    local channels = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
-                    if channels then
-                        channels:SendAsync(textToSend)
-                    end
-                else
-                    game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents"):FindFirstChild("SayMessageRequest"):FireServer(textToSend, "All")
-                end
-            end)
-            
-            addMessage(player.Name, textToSend)
+            chatEvent:Fire(player.Name, player.UserId, textToSend)
         end
     end
     
@@ -215,17 +236,13 @@ local function loadChatSection()
         end
     end)
     
-    -- Listen to incoming player chats in the game
-    for _, p in ipairs(Players:GetPlayers()) do
-        p.Chatted:Connect(function(msg)
-            addMessage(p.Name, msg)
-        end)
-    end
-    
-    Players.PlayerAdded:Connect(function(newPlayer)
-        newPlayer.Chatted:Connect(function(msg)
-            addMessage(newPlayer.Name, msg)
-        end)
+    local connection
+    connection = chatEvent.Event:Connect(function(sName, sUserId, sText)
+        if chatScroll and chatScroll.Parent then
+            addChatMessage(sName, sUserId, sText)
+        else
+            connection:Disconnect()
+        end
     end)
 end
 
@@ -262,7 +279,6 @@ local function loadMusicSection()
     pCorner.CornerRadius = UDim.new(0, 6)
     pCorner.Parent = playBtn
     
-    -- Sound object creation
     local sound = Instance.new("Sound")
     sound.Parent = workspace
     
@@ -290,7 +306,7 @@ local function loadCreditSection()
     creditText.TextWrapped = true
     creditText.TextYAlignment = Enum.TextYAlignment.Top
     creditText.TextXAlignment = Enum.TextXAlignment.Left
-    creditText.Text = "--- Credits ---\nScript Created by: Yuvi\nRepository: SUMITKABAAPYUVI\n\nFeatures:\n- Real Interacting Live Chat\n- Custom Music ID Player\n- Mobile & PC Friendly Dashboard\n\nEnjoy the game!"
+    creditText.Text = "--- Credits ---\nScript Created by: Yuvi\nRepository: SUMITKABAAPYUVI\n\n[Note: Works with friends in the same server]\n\nEnjoy the game!"
     creditText.Parent = contentArea
 end
 
@@ -299,7 +315,7 @@ btnChat.MouseButton1Click:Connect(loadChatSection)
 btnMusic.MouseButton1Click:Connect(loadMusicSection)
 btnCredit.MouseButton1Click:Connect(loadCreditSection)
 
--- Default open Credit or Chat on startup
-loadCreditSection()
+-- Default open Chat on startup
+loadChatSection()
 
-print("DEVTA CHATS!")
+print("Yuvi Dashboard Fully Loaded!")
