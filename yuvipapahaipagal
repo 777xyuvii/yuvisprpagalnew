@@ -34,12 +34,12 @@ for _, v in pairs(gP():GetChildren()) do
     end
 end
 
--- Batman Theme & Layout Colors (Updated Accent)
+-- Batman Theme & Layout Colors (With Purple Ambient Glow)
 local theme = {
     bg = Color3.fromRGB(15, 15, 20),
     header = Color3.fromRGB(25, 25, 32),
-    accent = Color3.fromRGB(255, 215, 0), -- Default Gold Title
-    ambient = Color3.fromRGB(147, 112, 219), -- Purple for Ambient Corner
+    accent = Color3.fromRGB(255, 215, 0), -- Gold Title
+    ambient = Color3.fromRGB(147, 112, 219), -- Purple Ambient Light
     text = Color3.fromRGB(255, 255, 255),
     label = Color3.fromRGB(170, 170, 185),
     inputBg = Color3.fromRGB(22, 22, 30),
@@ -63,11 +63,15 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = f
 
--- Purple Ambient Glow (Stroke)
+-- Purple Ambient Corner Glow (UIStroke + UICorner inside it)
 local stroke = Instance.new("UIStroke")
 stroke.Color = theme.ambient 
-stroke.Thickness = 2
+stroke.Thickness = 2.5
 stroke.Parent = f
+
+local strokeCorner = Instance.new("UICorner")
+strokeCorner.CornerRadius = UDim.new(0, 12)
+strokeCorner.Parent = stroke
 
 local tl = Instance.new("TextLabel")
 tl.Size = UDim2.new(1, 0, 0, 45)
@@ -239,6 +243,7 @@ infoLbl.TextSize = 12
 infoLbl.Font = Enum.Font.GothamItalic
 infoLbl.Parent = f
 
+-- Anti-Fling Variables
 local MAX_SPEED = 100
 local MAX_ANGULAR = 60
 local MAX_DISTANCE = 45
@@ -331,6 +336,7 @@ RunService.Heartbeat:Connect(function(dt)
     end
 end)
 
+-- START & STOP Buttons (Restored)
 local sB = Instance.new("TextButton")
 sB.Size = UDim2.new(0, 190, 0, 40)
 sB.Position = UDim2.new(0, 20, 0, 340)
