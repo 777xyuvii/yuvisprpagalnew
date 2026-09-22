@@ -1,483 +1,305 @@
--- ============================================================
--- YUVI DEVTA 🦅🐍 | Ultimate Global Chat, Music & Hub
--- ============================================================
+-- Services
 local Players = game:GetService("Players")
-local TweenSvc = game:GetService("TweenService")
-local UIS = game:GetService("UserInputService")
-local HttpSvc = game:GetService("HttpService")
-local SoundService = game:GetService("SoundService")
-local RunService = game:GetService("RunService")
-local Player = Players.LocalPlayer 
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Firebase Realtime Database Sync Configuration
-local FIREBASE_URL = "https://psychoontop-chat-mkx-default-rtdb.firebaseio.com/" 
-local lastProcessedKey = "" 
-local initialFetchDone = false 
-
-local function makeHttpRequest(options) 
-    local req = (syn and syn.request) or http_request or request or (http and http.request) 
-    if req then 
-        local success, response = pcall(req, options) 
-        if success then return response end 
-    end 
-    return nil 
-end 
-
-local function make(class, props) 
-    local o = Instance.new(class) 
-    for k, v in pairs(props) do 
-        o[k] = v 
-    end 
-    return o 
-end 
-
--- Themes Configuration
-local themes = {
-    Dark = {
-        bg = Color3.fromRGB(8, 8, 12),
-        header = Color3.fromRGB(14, 14, 20),
-        accent = Color3.fromRGB(220, 30, 255),
-        text = Color3.fromRGB(255, 255, 255),
-        label = Color3.fromRGB(160, 160, 180),
-        inputBg = Color3.fromRGB(16, 16, 24),
-    },
-    Cyberpunk = {
-        bg = Color3.fromRGB(10, 5, 15),
-        header = Color3.fromRGB(20, 10, 30),
-        accent = Color3.fromRGB(0, 255, 200),
-        text = Color3.fromRGB(255, 255, 255),
-        label = Color3.fromRGB(150, 220, 220),
-        inputBg = Color3.fromRGB(25, 12, 40),
-    },
-    BloodRed = {
-        bg = Color3.fromRGB(15, 8, 8),
-        header = Color3.fromRGB(25, 12, 12),
-        accent = Color3.fromRGB(255, 40, 40),
-        text = Color3.fromRGB(255, 255, 255),
-        label = Color3.fromRGB(220, 160, 160),
-        inputBg = Color3.fromRGB(35, 18, 18),
-    }
-}
-local currentThemeName = "Dark"
-local theme = themes[currentThemeName]
-
-local sg = Instance.new("ScreenGui")
-sg.Name = "YuviUltimateHub"
-sg.ResetOnSpawn = false
-
-local function gP()
-    local s, t = pcall(function() return gethui() end)
-    if s and t then return t end
-    s, t = pcall(function() return game:GetService("CoreGui") end)
-    if s and t then return t end
-    return Player:WaitForChild("PlayerGui")
+-- Purani GUI ko hatao agar pehle se hai
+if playerGui:FindFirstChild("SumitKaBaapYuviGUI") then
+    playerGui.SumitKaBaapYuviGUI:Destroy()
 end
 
-sg.Parent = gP()
+-- Main ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SumitKaBaapYuviGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
 
-for _, v in pairs(gP():GetChildren()) do
-    if v.Name == "YuviUltimateHub" and v ~= sg then
-        v:Destroy()
-    end
-end
+-- Auto-Scale for Mobile & PC
+local uiScale = Instance.new("UIScale")
+uiScale.Parent = screenGui
 
--- Main Window Frame
-local f = Instance.new("Frame")
-f.Size = UDim2.new(0, 440, 0, 520)
-f.Position = UDim2.new(0.5, -220, 0.18, 0)
-f.BackgroundColor3 = theme.bg
-f.BorderSizePixel = 0
-f.Draggable = true
-f.Active = true
-f.Visible = true
-f.Parent = sg
+-- Main Rectangle Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 680, 0, 420) 
+mainFrame.Position = UDim2.new(0.5, -340, 0.5, -210)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
 
 local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 14)
-corner.Parent = f
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = mainFrame
 
-local stroke = Instance.new("UIStroke")
-stroke.Color = theme.accent 
-stroke.Thickness = 2.5
-stroke.Parent = f
-
--- Header Title with RGB Effect
-local tl = Instance.new("TextLabel")
-tl.Size = UDim2.new(1, 0, 0, 42)
-tl.BackgroundColor3 = theme.header
-tl.Text = "  ⚡ YUVI S1R 🦅🐍 [OWNER]"
-tl.TextColor3 = Color3.fromRGB(255, 255, 255)
-tl.TextSize = 14
-tl.Font = Enum.Font.GothamBold
-tl.TextXAlignment = Enum.TextXAlignment.Left
-tl.Parent = f
-
-task.spawn(function()
-    while tl and tl.Parent do
-        local hue = tick() % 5 / 5
-        tl.TextColor3 = Color3.fromHSV(hue, 1, 1)
-        task.wait(0.05)
-    end
-end)
+-- Title Bar
+local titleBar = Instance.new("TextLabel")
+titleBar.Size = UDim2.new(1, 0, 0, 50)
+titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
+titleBar.Text = "   Yuvi Script Dashboard"
+titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleBar.TextSize = 18
+titleBar.Font = Enum.Font.SourceSansBold
+titleBar.TextXAlignment = Enum.TextXAlignment.Left
+titleBar.Parent = mainFrame
 
 local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 14)
-titleCorner.Parent = tl
+titleCorner.CornerRadius = UDim.new(0, 12)
+titleCorner.Parent = titleBar
 
+-- Close Button (X)
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 28, 0, 28)
-closeBtn.Position = UDim2.new(1, -34, 0, 7)
-closeBtn.BackgroundColor3 = Color3.fromRGB(220, 40, 40)
-closeBtn.Text = "✕"
-closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeBtn.TextSize = 13
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.Parent = f
+closeBtn.Size = UDim2.new(0, 50, 0, 50)
+closeBtn.Position = UDim2.new(1, -50, 0, 0)
+closeBtn.BackgroundTransparency = 1
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
+closeBtn.TextSize = 18
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.Parent = titleBar
 
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 8)
-closeCorner.Parent = closeBtn
-
--- Tab Buttons Bar (Chat vs Music Hub)
-local tabContainer = Instance.new("Frame")
-tabContainer.Size = UDim2.new(1, -20, 0, 32)
-tabContainer.Position = UDim2.new(0, 10, 0, 48)
-tabContainer.BackgroundTransparency = 1
-tabContainer.Parent = f
-
-local chatTabBtn = Instance.new("TextButton")
-chatTabBtn.Size = UDim2.new(0.48, 0, 1, 0)
-chatTabBtn.BackgroundColor3 = theme.header
-chatTabBtn.Text = "💬 Global Chat"
-chatTabBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-chatTabBtn.TextSize = 12
-chatTabBtn.Font = Enum.Font.GothamBold
-chatTabBtn.Parent = tabContainer
-local chatCorner = Instance.new("UICorner")
-chatCorner.CornerRadius = UDim.new(0, 8)
-chatCorner.Parent = chatTabBtn
-
-local musicTabBtn = Instance.new("TextButton")
-musicTabBtn.Size = UDim2.new(0.48, 0, 1, 0)
-musicTabBtn.Position = UDim2.new(0.52, 0, 0, 0)
-musicTabBtn.BackgroundColor3 = theme.inputBg
-musicTabBtn.Text = "🎵 Music Player"
-musicTabBtn.TextColor3 = theme.label
-musicTabBtn.TextSize = 12
-musicTabBtn.Font = Enum.Font.GothamBold
-musicTabBtn.Parent = tabContainer
-local musicCorner = Instance.new("UICorner")
-musicCorner.CornerRadius = UDim.new(0, 8)
-musicCorner.Parent = musicTabBtn
-
--- Pages Containers
-local chatPage = Instance.new("Frame")
-chatPage.Size = UDim2.new(1, -20, 1, -145)
-chatPage.Position = UDim2.new(0, 10, 0, 88)
-chatPage.BackgroundTransparency = 1
-chatPage.Visible = true
-chatPage.Parent = f
-
-local musicPage = Instance.new("Frame")
-musicPage.Size = UDim2.new(1, -20, 1, -145)
-musicPage.Position = UDim2.new(0, 10, 0, 88)
-musicPage.BackgroundTransparency = 1
-musicPage.Visible = false
-musicPage.Parent = f
-
--- Theme Change Button (Inside UI)
-local themeBtn = Instance.new("TextButton")
-themeBtn.Size = UDim2.new(0, 120, 0, 30)
-themeBtn.Position = UDim2.new(0, 10, 1, -40)
-themeBtn.BackgroundColor3 = theme.header
-themeBtn.Text = "🎨 Change Theme"
-themeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-themeBtn.TextSize = 11
-themeBtn.Font = Enum.Font.GothamBold
-themeBtn.Parent = f
-local themeCorner = Instance.new("UICorner")
-themeCorner.CornerRadius = UDim.new(0, 6)
-themeCorner.Parent = themeBtn
-
-themeBtn.MouseButton1Click:Connect(function()
-    if currentThemeName == "Dark" then
-        currentThemeName = "Cyberpunk"
-    elseif currentThemeName == "Cyberpunk" then
-        currentThemeName = "BloodRed"
-    else
-        currentThemeName = "Dark"
-    end
-    theme = themes[currentThemeName]
-    f.BackgroundColor3 = theme.bg
-    stroke.Color = theme.accent
-    tl.BackgroundColor3 = theme.header
-    chatTabBtn.BackgroundColor3 = theme.header
-    themeBtn.BackgroundColor3 = theme.header
-    themeBtn.Text = "🎨 Theme: " .. currentThemeName
+closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
 end)
 
--- ================= CHAT PAGE SETUP =================
-local chatScroll = Instance.new("ScrollingFrame")
-chatScroll.Size = UDim2.new(1, 0, 1, -50)
-chatScroll.BackgroundTransparency = 1
-chatScroll.BorderSizePixel = 0
-chatScroll.ScrollBarThickness = 4
-chatScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-chatScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-chatScroll.Parent = chatPage
+-- LEFT SIDE MENU
+local leftMenu = Instance.new("ScrollingFrame")
+leftMenu.Size = UDim2.new(0, 180, 1, -60)
+leftMenu.Position = UDim2.new(0, 0, 0, 55)
+leftMenu.BackgroundTransparency = 1
+leftMenu.CanvasSize = UDim2.new(0, 0, 0, 200)
+leftMenu.ScrollBarThickness = 4
+leftMenu.Parent = mainFrame
 
-local listLayout = Instance.new("UIListLayout")
-listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-listLayout.Padding = UDim.new(0, 6)
-listLayout.Parent = chatScroll
+local uiList = Instance.new("UIListLayout")
+uiList.SortOrder = Enum.SortOrder.LayoutOrder
+uiList.Padding = UDim.new(0, 10)
+uiList.Parent = leftMenu
 
-local function addChatMessage(sender, text)
-    local msgFrame = Instance.new("Frame")
-    msgFrame.Size = UDim2.new(1, 0, 0, 0)
-    msgFrame.AutomaticSize = Enum.AutomaticSize.Y
-    msgFrame.BackgroundTransparency = 1
-    msgFrame.Parent = chatScroll
-
-    local msgLabel = Instance.new("TextLabel")
-    msgLabel.Size = UDim2.new(1, 0, 0, 0)
-    msgLabel.AutomaticSize = Enum.AutomaticSize.Y
-    msgLabel.BackgroundTransparency = 1
-    msgLabel.Text = "<b>[" .. tostring(sender) .. "]:</b> " .. tostring(text)
-    msgLabel.RichText = true
-    msgLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    msgLabel.TextSize = 13
-    msgLabel.Font = Enum.Font.Gotham
-    msgLabel.TextWrapped = true
-    msgLabel.TextXAlignment = Enum.TextXAlignment.Left
-    msgLabel.Parent = msgFrame
-
-    chatScroll.CanvasPosition = Vector2.new(0, chatScroll.AbsoluteCanvasSize.Y)
+local function createMenuButton(name, order)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -12, 0, 42)
+    btn.Position = UDim2.new(0, 6, 0, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 65)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 16
+    btn.Font = Enum.Font.SourceSansSemibold
+    btn.Text = name
+    btn.LayoutOrder = order
+    btn.Parent = leftMenu
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = btn
+    
+    return btn
 end
 
-local function broadcastPayload(text, isMusic, musicId)
-    if FIREBASE_URL == "" then return end
-    task.spawn(function()
-        local data = {
-            sender = Player.Name,
-            text = text,
-            isMusic = isMusic or false,
-            musicId = musicId or "",
-            timestamp = os.time()
-        }
-        local success, json = pcall(function() return HttpSvc:JSONEncode(data) end)
-        if success then
-            makeHttpRequest({
-                Url = FIREBASE_URL .. "global_chat.json",
-                Method = "POST",
-                Headers = { ["Content-Type"] = "application/json" },
-                Body = json
-            })
+local btnChat = createMenuButton("Chat", 1)
+local btnMusic = createMenuButton("Music Player", 2)
+local btnCredit = createMenuButton("Credit", 3)
+
+-- RIGHT SIDE CONTENT AREA
+local contentArea = Instance.new("Frame")
+contentArea.Size = UDim2.new(1, -195, 1, -70)
+contentArea.Position = UDim2.new(0, 185, 0, 60)
+contentArea.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+contentArea.BorderSizePixel = 0
+contentArea.Parent = mainFrame
+
+local contentCorner = Instance.new("UICorner")
+contentCorner.CornerRadius = UDim.new(0, 8)
+contentCorner.Parent = contentArea
+
+-- Function to clear content area before loading a new section
+local function clearContent()
+    for _, child in ipairs(contentArea:GetChildren()) do
+        if not child:IsA("UICorner") then
+            child:Destroy()
+        end
+    end
+end
+
+-- 1. CHAT SECTION (Asli working UI chat box)
+local function loadChatSection()
+    clearContent()
+    
+    -- Chat History Display Box
+    local chatScroll = Instance.new("ScrollingFrame")
+    chatScroll.Size = UDim2.new(1, -20, 1, -70)
+    chatScroll.Position = UDim2.new(0, 10, 0, 10)
+    chatScroll.BackgroundTransparency = 1
+    chatScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    chatScroll.ScrollBarThickness = 4
+    chatScroll.Parent = contentArea
+    
+    local chatList = Instance.new("UIListLayout")
+    chatList.SortOrder = Enum.SortOrder.LayoutOrder
+    chatList.Padding = UDim.new(0, 5)
+    chatList.Parent = chatScroll
+    
+    -- Text Input Box to type message
+    local textBox = Instance.new("TextBox")
+    textBox.Size = UDim2.new(1, -90, 0, 40)
+    textBox.Position = UDim2.new(0, 10, 1, -50)
+    textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textBox.PlaceholderText = "Yahan message type karein..."
+    textBox.Text = ""
+    textBox.TextSize = 14
+    textBox.Font = Enum.Font.SourceSans
+    textBox.ClearTextOnFocus = false
+    textBox.Parent = contentArea
+    
+    local boxCorner = Instance.new("UICorner")
+    boxCorner.CornerRadius = UDim.new(0, 6)
+    boxCorner.Parent = textBox
+    
+    -- Send Button
+    local sendBtn = Instance.new("TextButton")
+    sendBtn.Size = UDim2.new(0, 70, 0, 40)
+    sendBtn.Position = UDim2.new(1, -80, 1, -50)
+    sendBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    sendBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    sendBtn.Text = "Send"
+    sendBtn.TextSize = 15
+    sendBtn.Font = Enum.Font.SourceSansBold
+    sendBtn.Parent = contentArea
+    
+    local sendCorner = Instance.new("UICorner")
+    sendCorner.CornerRadius = UDim.new(0, 6)
+    sendCorner.Parent = sendBtn
+    
+    -- Function to add message to UI chat box
+    local function addMessage(senderName, msgText)
+        local msgLabel = Instance.new("TextLabel")
+        msgLabel.Size = UDim2.new(1, 0, 0, 25)
+        msgLabel.BackgroundTransparency = 1
+        msgLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
+        msgLabel.TextSize = 14
+        msgLabel.Font = Enum.Font.SourceSans
+        msgLabel.TextXAlignment = Enum.TextXAlignment.Left
+        msgLabel.TextWrapped = true
+        msgLabel.Text = "[" .. senderName .. "]: " .. msgText
+        msgLabel.Parent = chatScroll
+        
+        chatScroll.CanvasSize = UDim2.new(0, 0, 0, chatList.AbsoluteContentSize.Y)
+    end
+    
+    -- Send message logic (Ye game ki normal chat mein bhi bhejega aur UI me bhi dikhayega)
+    local function sendMessage()
+        if textBox.Text ~= "" then
+            local textToSend = textBox.Text
+            textBox.Text = ""
+            
+            -- Send to actual Roblox Game Chat if possible
+            pcall(function()
+                local TextChatService = game:GetService("TextChatService")
+                if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+                    local channels = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
+                    if channels then
+                        channels:SendAsync(textToSend)
+                    end
+                else
+                    game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents"):FindFirstChild("SayMessageRequest"):FireServer(textToSend, "All")
+                end
+            end)
+            
+            addMessage(player.Name, textToSend)
+        end
+    end
+    
+    sendBtn.MouseButton1Click:Connect(sendMessage)
+    textBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            sendMessage()
+        end
+    end)
+    
+    -- Listen to incoming player chats in the game
+    for _, p in ipairs(Players:GetPlayers()) do
+        p.Chatted:Connect(function(msg)
+            addMessage(p.Name, msg)
+        end)
+    end
+    
+    Players.PlayerAdded:Connect(function(newPlayer)
+        newPlayer.Chatted:Connect(function(msg)
+            addMessage(newPlayer.Name, msg)
+        end)
+    end)
+end
+
+-- 2. MUSIC PLAYER SECTION
+local function loadMusicSection()
+    clearContent()
+    
+    local musicInput = Instance.new("TextBox")
+    musicInput.Size = UDim2.new(1, -20, 0, 40)
+    musicInput.Position = UDim2.new(0, 10, 0, 15)
+    musicInput.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    musicInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+    musicInput.PlaceholderText = "Audio ID yahan dalein..."
+    musicInput.Text = ""
+    musicInput.TextSize = 14
+    musicInput.Font = Enum.Font.SourceSans
+    musicInput.Parent = contentArea
+    
+    local mCorner = Instance.new("UICorner")
+    mCorner.CornerRadius = UDim.new(0, 6)
+    mCorner.Parent = musicInput
+    
+    local playBtn = Instance.new("TextButton")
+    playBtn.Size = UDim2.new(1, -20, 0, 40)
+    playBtn.Position = UDim2.new(0, 10, 0, 65)
+    playBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
+    playBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    playBtn.Text = "Play Music"
+    playBtn.TextSize = 15
+    playBtn.Font = Enum.Font.SourceSansBold
+    playBtn.Parent = contentArea
+    
+    local pCorner = Instance.new("UICorner")
+    pCorner.CornerRadius = UDim.new(0, 6)
+    pCorner.Parent = playBtn
+    
+    -- Sound object creation
+    local sound = Instance.new("Sound")
+    sound.Parent = workspace
+    
+    playBtn.MouseButton1Click:Connect(function()
+        local id = musicInput.Text
+        if id ~= "" then
+            sound.SoundId = "rbxassetid://" .. id
+            sound:Play()
+            playBtn.Text = "Playing..."
         end
     end)
 end
 
-local inputContainer = Instance.new("Frame")
-inputContainer.Size = UDim2.new(1, 0, 0, 42)
-inputContainer.Position = UDim2.new(0, 0, 1, -45)
-inputContainer.BackgroundColor3 = theme.inputBg
-inputContainer.Parent = chatPage
-
-local inputCorner = Instance.new("UICorner")
-inputCorner.CornerRadius = UDim.new(0, 8)
-inputCorner.Parent = inputContainer
-
-local chatBox = Instance.new("TextBox")
-chatBox.Size = UDim2.new(1, -55, 1, 0)
-chatBox.Position = UDim2.new(0, 10, 0, 0)
-chatBox.BackgroundTransparency = 1
-chatBox.PlaceholderText = "Dosto ko message bhejo..."
-chatBox.PlaceholderColor3 = theme.label
-chatBox.Text = ""
-chatBox.TextColor3 = theme.text
-chatBox.TextSize = 13
-chatBox.Font = Enum.Font.Gotham
-chatBox.TextXAlignment = Enum.TextXAlignment.Left
-chatBox.ClearTextOnFocus = false
-chatBox.Parent = inputContainer
-
-local sendBtn = Instance.new("TextButton")
-sendBtn.Size = UDim2.new(0, 40, 0, 32)
-sendBtn.Position = UDim2.new(1, -45, 0.5, -16)
-sendBtn.BackgroundColor3 = theme.accent
-sendBtn.Text = "➤"
-sendBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-sendBtn.TextSize = 14
-sendBtn.Font = Enum.Font.GothamBold
-sendBtn.Parent = inputContainer
-local sendCorner = Instance.new("UICorner")
-sendCorner.CornerRadius = UDim.new(0, 6)
-sendCorner.Parent = sendBtn
-
-local function executeSend()
-    local text = chatBox.Text
-    if text == "" then return end
-    chatBox.Text = ""
-    addChatMessage(Player.Name, text)
-    broadcastPayload(text, false, "")
+-- 3. CREDIT SECTION
+local function loadCreditSection()
+    clearContent()
+    
+    local creditText = Instance.new("TextLabel")
+    creditText.Size = UDim2.new(1, -30, 1, -30)
+    creditText.Position = UDim2.new(0, 15, 0, 15)
+    creditText.BackgroundTransparency = 1
+    creditText.TextColor3 = Color3.fromRGB(210, 210, 210)
+    creditText.TextSize = 16
+    creditText.Font = Enum.Font.SourceSans
+    creditText.TextWrapped = true
+    creditText.TextYAlignment = Enum.TextYAlignment.Top
+    creditText.TextXAlignment = Enum.TextXAlignment.Left
+    creditText.Text = "--- Credits ---\nScript Created by: Yuvi\nRepository: SUMITKABAAPYUVI\n\nFeatures:\n- Real Interacting Live Chat\n- Custom Music ID Player\n- Mobile & PC Friendly Dashboard\n\nEnjoy the game!"
+    creditText.Parent = contentArea
 end
 
-sendBtn.MouseButton1Click:Connect(executeSend)
-chatBox.FocusLost:Connect(function(enterPressed) if enterPressed then executeSend() end end)
+-- Button Triggers
+btnChat.MouseButton1Click:Connect(loadChatSection)
+btnMusic.MouseButton1Click:Connect(loadMusicSection)
+btnCredit.MouseButton1Click:Connect(loadCreditSection)
 
+-- Default open Credit or Chat on startup
+loadCreditSection()
 
--- ================= MUSIC PLAYER PAGE SETUP =================
-local musicLabel = Instance.new("TextLabel")
-musicLabel.Size = UDim2.new(1, 0, 0, 30)
-musicLabel.BackgroundTransparency = 1
-musicLabel.Text = "🎵 Enter Roblox Audio ID to play for everyone:"
-musicLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-musicLabel.TextSize = 12
-musicLabel.Font = Enum.Font.GothamBold
-musicLabel.TextXAlignment = Enum.TextXAlignment.Left
-musicLabel.Parent = musicPage
-
-local musicInput = Instance.new("TextBox")
-musicInput.Size = UDim2.new(1, 0, 0, 40)
-musicInput.Position = UDim2.new(0, 0, 0, 40)
-musicInput.BackgroundColor3 = theme.inputBg
-musicInput.PlaceholderText = "e.g. 1848354536"
-musicInput.PlaceholderColor3 = theme.label
-musicInput.Text = ""
-musicInput.TextColor3 = theme.text
-musicInput.TextSize = 14
-musicInput.Font = Enum.Font.Gotham
-musicInput.Parent = musicPage
-local musicInputCorner = Instance.new("UICorner")
-musicInputCorner.CornerRadius = UDim.new(0, 8)
-musicInputCorner.Parent = musicInput
-
-local playMusicBtn = Instance.new("TextButton")
-playMusicBtn.Size = UDim2.new(1, 0, 0, 40)
-playMusicBtn.Position = UDim2.new(0, 0, 0, 95)
-playMusicBtn.BackgroundColor3 = Color3.fromRGB(40, 180, 80)
-playMusicBtn.Text = "▶ PLAY MUSIC (SYNC WITH FRIENDS)"
-playMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-playMusicBtn.TextSize = 13
-playMusicBtn.Font = Enum.Font.GothamBold
-playMusicBtn.Parent = musicPage
-local playCorner = Instance.new("UICorner")
-playCorner.CornerRadius = UDim.new(0, 8)
-playCorner.Parent = playMusicBtn
-
-local stopMusicBtn = Instance.new("TextButton")
-stopMusicBtn.Size = UDim2.new(1, 0, 0, 40)
-stopMusicBtn.Position = UDim2.new(0, 0, 0, 145)
-stopMusicBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-stopMusicBtn.Text = "⏹ STOP MUSIC"
-stopMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-stopMusicBtn.TextSize = 13
-stopMusicBtn.Font = Enum.Font.GothamBold
-stopMusicBtn.Parent = musicPage
-local stopCorner = Instance.new("UICorner")
-stopCorner.CornerRadius = UDim.new(0, 8)
-stopCorner.Parent = stopMusicBtn
-
--- Global Audio Object
-local backgroundMusic = Instance.new("Sound")
-backgroundMusic.Name = "YuviGlobalMusic"
-backgroundMusic.Looped = true
-backgroundMusic.Volume = 2
-backgroundMusic.Parent = SoundService
-
-playMusicBtn.MouseButton1Click:Connect(function()
-    local audioId = musicInput.Text
-    if audioId == "" then return end
-    backgroundMusic.SoundId = "rbxassetid://" .. audioId
-    backgroundMusic:Play()
-    addChatMessage("SYSTEM", "🎵 Playing Music ID: " .. audioId)
-    broadcastPayload("started playing music ID: " .. audioId, true, audioId)
-end)
-
-stopMusicBtn.MouseButton1Click:Connect(function()
-    backgroundMusic:Stop()
-    addChatMessage("SYSTEM", "⏹ Music stopped.")
-end)
-
-
--- Tab Switching Logic
-chatTabBtn.MouseButton1Click:Connect(function()
-    chatPage.Visible = true
-    musicPage.Visible = false
-    chatTabBtn.BackgroundColor3 = theme.header
-    musicTabBtn.BackgroundColor3 = theme.inputBg
-end)
-
-musicTabBtn.MouseButton1Click:Connect(function()
-    chatPage.Visible = false
-    musicPage.Visible = true
-    musicTabBtn.BackgroundColor3 = theme.header
-    chatTabBtn.BackgroundColor3 = theme.inputBg
-end)
-
-
--- Minimize / Floating Bubble
-local fl = Instance.new("TextButton")
-fl.Size = UDim2.new(0, 110, 0, 38)
-fl.Position = UDim2.new(0.8, 0, 0.8, 0)
-fl.BackgroundColor3 = theme.header
-fl.Text = "YUVI DEVTA 👑"
-fl.TextColor3 = Color3.fromRGB(255, 255, 255)
-fl.TextSize = 12
-fl.Font = Enum.Font.GothamBold
-fl.Visible = false
-fl.Parent = sg
-
-task.spawn(function()
-    while fl and fl.Parent do
-        local hue = tick() % 5 / 5
-        fl.TextColor3 = Color3.fromHSV(hue, 1, 1)
-        task.wait(0.05)
-    end
-end)
-
-local flCorner = Instance.new("UICorner")
-flCorner.CornerRadius = UDim.new(0, 8)
-flCorner.Parent = fl
-
-closeBtn.MouseButton1Click:Connect(function() f.Visible = false fl.Visible = true end)
-fl.MouseButton1Click:Connect(function() f.Visible = true fl.Visible = false end)
-
-
--- Database Polling Loop for Cross-Server Chat & Music Sync
-task.spawn(function()
-    while task.wait(1.5) do
-        if FIREBASE_URL ~= "" then
-            local response = makeHttpRequest({
-                Url = FIREBASE_URL .. "global_chat.json?orderBy=\"$key\"&limitToLast=15",
-                Method = "GET"
-            })
-            if response and response.StatusCode == 200 then
-                local ok, data = pcall(function() return HttpSvc:JSONDecode(response.Body) end)
-                if ok and type(data) == "table" then
-                    local sortedPackets = {}
-                    for key, packet in pairs(data) do
-                        table.insert(sortedPackets, { key = key, val = packet })
-                    end
-                    table.sort(sortedPackets, function(a, b) return a.key < b.key end)
-                    for _, entry in ipairs(sortedPackets) do
-                        if entry.key > lastProcessedKey then
-                            lastProcessedKey = entry.key
-                            if initialFetchDone and entry.val.sender ~= Player.Name then
-                                if entry.val.isMusic and entry.val.musicId then
-                                    backgroundMusic.SoundId = "rbxassetid://" .. entry.val.musicId
-                                    backgroundMusic:Play()
-                                    addChatMessage(entry.val.sender, "started playing music 🎵")
-                                else
-                                    addChatMessage(entry.val.sender, entry.val.text)
-                                end
-                            end
-                        end
-                    end
-                    initialFetchDone = true
-                end
-            end
-        end
-    end
-end)
-
-addChatMessage("SYSTEM", "YUVI S1R 🦅🐍 GLOBAL HUB CONNECTED!")
+print("DEVTA CHATS!")
