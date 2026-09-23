@@ -4,7 +4,7 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local HttpService = game:GetService("HttpService")
 
--- === APNE RENDER SERVER KA URL YAHAN FIXED HAI ===
+-- === RENDER SERVER URL ===
 local SERVER_URL = "https://yuvi-chat-backend.onrender.com" 
 
 -- Purani GUI ko hatao agar pehle se hai
@@ -34,11 +34,11 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = mainFrame
 
--- Title Bar
+-- Title Bar with RGB Effect
 local titleBar = Instance.new("TextLabel")
 titleBar.Size = UDim2.new(1, -50, 0, 50)
 titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
-titleBar.Text = "    Yuvi Global Private Chat"
+titleBar.Text = "    DEVTA CHATS 💋🐍🦅"
 titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleBar.TextSize = 18
 titleBar.Font = Enum.Font.SourceSansBold
@@ -48,6 +48,17 @@ titleBar.Parent = mainFrame
 local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0, 12)
 titleCorner.Parent = titleBar
+
+-- RGB Color Loop for Title
+task.spawn(function()
+    while titleBar and titleBar.Parent do
+        for i = 0, 1, 0.01 do
+            if not titleBar or not titleBar.Parent then break end
+            titleBar.TextColor3 = Color3.fromHSV(i, 1, 1)
+            task.wait(0.05)
+        end
+    end
+end)
 
 -- Close Button (X)
 local closeBtn = Instance.new("TextButton")
@@ -218,7 +229,7 @@ local function loadChatSection()
         chatScroll.CanvasSize = UDim2.new(0, 0, 0, chatList.AbsoluteContentSize.Y + 10)
     end
     
-    -- Send Message to Your Server
+    -- Send Message to Server
     local function sendGlobalMessage(msgText)
         task.spawn(function()
             pcall(function()
@@ -247,7 +258,13 @@ local function loadChatSection()
         end
     end)
     
-    -- Auto Fetch Messages Loop (Polling every 3 seconds from Render Server)
+    -- Send Join Notification
+    task.spawn(function()
+        task.wait(1)
+        sendGlobalMessage("@" .. player.Name .. " has joined devta chats")
+    end)
+    
+    -- Auto Fetch Messages Loop
     local active = true
     screenGui.Destroying:Connect(function()
         active = false
@@ -333,7 +350,7 @@ local function loadCreditSection()
     creditText.TextWrapped = true
     creditText.TextYAlignment = Enum.TextYAlignment.Top
     creditText.TextXAlignment = Enum.TextXAlignment.Left
-    creditText.Text = "--- Credits ---\nScript Created by: Yuvi\nRepository: SUMITKABAAPYUVI\n\nFeatures:\n- Custom Global Cross-Server Backend\n- Circular Avatar (PFP) & Name Identity\n- 100% Private Isolated Script Chat\n\nEnjoy!"
+    creditText.Text = "--- Credits ---\nScript Created by: Yuvi\n\nFeatures:\n- Custom Global Cross-Server Backend\n- Circular Avatar (PFP) & Name Identity\n- 100% Private Isolated Script Chat\n\nEnjoy!"
     creditText.Parent = contentArea
 end
 
@@ -345,4 +362,4 @@ btnCredit.MouseButton1Click:Connect(loadCreditSection)
 -- Default open Chat on startup
 loadChatSection()
 
-print("devta chats 🐍🦅")
+print("DevTA CHATS LOADED PAGAL!")
