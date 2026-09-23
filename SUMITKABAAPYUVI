@@ -4,7 +4,7 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local HttpService = game:GetService("HttpService")
 
--- === APNE RENDER SERVER KA URL YAHAN DALNA ===
+-- === APNE RENDER SERVER KA URL YAHAN FIXED HAI ===
 local SERVER_URL = "https://yuvi-chat-backend.onrender.com" 
 
 -- Purani GUI ko hatao agar pehle se hai
@@ -247,7 +247,7 @@ local function loadChatSection()
         end
     end)
     
-    -- Auto Fetch Messages Loop (Polling every 3 seconds)
+    -- Auto Fetch Messages Loop (Polling every 3 seconds from Render Server)
     local active = true
     screenGui.Destroying:Connect(function()
         active = false
@@ -333,7 +333,7 @@ local function loadCreditSection()
     creditText.TextWrapped = true
     creditText.TextYAlignment = Enum.TextYAlignment.Top
     creditText.TextXAlignment = Enum.TextXAlignment.Left
-    creditText.Text = "--- Credits ---\nScript Created by: Yuvi\nRepository: SUMITKABAAPYUVI\n\nFeatures:\n- Custom Global Cross-Server Backend\n- Circular Avatar & Name Identity\n- 100% Private Isolated Script Chat\n\nEnjoy!"
+    creditText.Text = "--- Credits ---\nScript Created by: Yuvi\nRepository: SUMITKABAAPYUVI\n\nFeatures:\n- Custom Global Cross-Server Backend\n- Circular Avatar (PFP) & Name Identity\n- 100% Private Isolated Script Chat\n\nEnjoy!"
     creditText.Parent = contentArea
 end
 
@@ -345,4 +345,4 @@ btnCredit.MouseButton1Click:Connect(loadCreditSection)
 -- Default open Chat on startup
 loadChatSection()
 
-print("Yuvi devta chats 💋🐍🦅!")
+print("devta chats 🐍🦅")
