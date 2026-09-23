@@ -4,7 +4,7 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local HttpService = game:GetService("HttpService")
 
--- === RENDER SERVER URL ===
+-- === APNE RENDER SERVER KA URL YAHAN FIXED HAI ===
 local SERVER_URL = "https://yuvi-chat-backend.onrender.com" 
 
 -- Purani GUI ko hatao agar pehle se hai
@@ -34,11 +34,11 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = mainFrame
 
--- Title Bar with RGB Effect
+-- Title Bar
 local titleBar = Instance.new("TextLabel")
-titleBar.Size = UDim2.new(1, -50, 0, 50)
+titleBar.Size = UDim2.new(1, -120, 0, 50)
 titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
-titleBar.Text = "    DEVTA CHATS 💋🐍🦅"
+titleBar.Text = "    Yuvi Global Private Chat"
 titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleBar.TextSize = 18
 titleBar.Font = Enum.Font.SourceSansBold
@@ -49,28 +49,60 @@ local titleCorner = Instance.new("UICorner")
 titleCorner.CornerRadius = UDim.new(0, 12)
 titleCorner.Parent = titleBar
 
--- RGB Color Loop for Title
-task.spawn(function()
-    while titleBar and titleBar.Parent do
-        for i = 0, 1, 0.01 do
-            if not titleBar or not titleBar.Parent then break end
-            titleBar.TextColor3 = Color3.fromHSV(i, 1, 1)
-            task.wait(0.05)
-        end
-    end
-end)
+-- Container for Top Buttons (Minimize & Close)
+local btnContainer = Instance.new("Frame")
+btnContainer.Size = UDim2.new(0, 120, 0, 50)
+btnContainer.Position = UDim2.new(1, -120, 0, 0)
+btnContainer.BackgroundTransparency = 1
+btnContainer.Parent = mainFrame
 
--- Close Button (X)
+local btnLayout = Instance.new("UIListLayout")
+btnLayout.FillDirection = Enum.FillDirection.Horizontal
+btnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+btnLayout.SortOrder = Enum.SortOrder.LayoutOrder
+btnLayout.Parent = btnContainer
+
+-- Minimize Button (-)
+local minBtn = Instance.new("TextButton")
+minBtn.Size = UDim2.new(0, 50, 0, 50)
+minBtn.BackgroundTransparency = 1
+minBtn.Text = "-"
+minBtn.TextColor3 = Color3.fromRGB(255, 200, 100)
+minBtn.TextSize = 22
+minBtn.Font = Enum.Font.SourceSansBold
+minBtn.LayoutOrder = 1
+minBtn.Parent = btnContainer
+
+-- Close / Terminate Button (X)
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 50, 0, 50)
-closeBtn.Position = UDim2.new(1, 0, 0, 0)
 closeBtn.BackgroundTransparency = 1
 closeBtn.Text = "X"
 closeBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
 closeBtn.TextSize = 18
 closeBtn.Font = Enum.Font.SourceSansBold
-closeBtn.Parent = titleBar
+closeBtn.LayoutOrder = 2
+closeBtn.Parent = btnContainer
 
+-- Minimize & Restore Logic
+local isMinimized = false
+minBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    for _, child in ipairs(mainFrame:GetChildren()) do
+        if child ~= titleBar and child ~= corner and child ~= btnContainer then
+            child.Visible = not isMinimized
+        end
+    end
+    if isMinimized then
+        mainFrame.Size = UDim2.new(0, 680, 0, 50)
+        minBtn.Text = "+"
+    else
+        mainFrame.Size = UDim2.new(0, 680, 0, 420)
+        minBtn.Text = "-"
+    end
+end)
+
+-- Terminate / Destroy Logic
 closeBtn.MouseButton1Click:Connect(function()
     screenGui:Destroy()
 end)
@@ -229,7 +261,7 @@ local function loadChatSection()
         chatScroll.CanvasSize = UDim2.new(0, 0, 0, chatList.AbsoluteContentSize.Y + 10)
     end
     
-    -- Send Message to Server
+    -- Send Message to Your Server
     local function sendGlobalMessage(msgText)
         task.spawn(function()
             pcall(function()
@@ -258,13 +290,7 @@ local function loadChatSection()
         end
     end)
     
-    -- Send Join Notification
-    task.spawn(function()
-        task.wait(1)
-        sendGlobalMessage("@" .. player.Name .. " has joined devta chats")
-    end)
-    
-    -- Auto Fetch Messages Loop
+    -- Auto Fetch Messages Loop (Polling every 3 seconds from Render Server)
     local active = true
     screenGui.Destroying:Connect(function()
         active = false
@@ -350,7 +376,7 @@ local function loadCreditSection()
     creditText.TextWrapped = true
     creditText.TextYAlignment = Enum.TextYAlignment.Top
     creditText.TextXAlignment = Enum.TextXAlignment.Left
-    creditText.Text = "--- Credits ---\nScript Created by: Yuvi\n\nFeatures:\n- Custom Global Cross-Server Backend\n- Circular Avatar (PFP) & Name Identity\n- 100% Private Isolated Script Chat\n\nEnjoy!"
+    creditText.Text = "--- Credits ---\nScript Created by: Yuvi\nRepository: SUMITKABAAPYUVI\n\nFeatures:\n- Custom Minimize & Terminate Controls\n- Global Cross-Server Backend Sync\n- Circular Avatar (PFP) & Name Identity\n\nEnjoy!"
     creditText.Parent = contentArea
 end
 
@@ -362,4 +388,4 @@ btnCredit.MouseButton1Click:Connect(loadCreditSection)
 -- Default open Chat on startup
 loadChatSection()
 
-print("DevTA CHATS LOADED PAGAL!")
+print("Yuvi DEVTA CHATS 💋🐍🦅!")
