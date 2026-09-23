@@ -258,7 +258,8 @@ local function loadChatSection()
         msgLabel.Text = msgText
         msgLabel.Parent = textHolder
         
-        chatScroll.CanvasSize = UDim2.new(0, 0, 0, chatList.AbsoluteContentSize.Y + 10)
+        chatScroll.CanvasSize = UDim2.new(0, 0, 0, chatList.AbsoluteContentSize.Y + 15)
+        chatScroll.CanvasPosition = Vector2.new(0, chatScroll.CanvasSize.Y.Offset)
     end
     
     -- Send Message to Your Server
@@ -290,28 +291,41 @@ local function loadChatSection()
         end
     end)
     
-    -- Auto Fetch Messages Loop (Polling every 3 seconds from Render Server)
+    -- Fixed Auto Fetch Messages Loop (Loads existing and new messages properly)
     local active = true
     screenGui.Destroying:Connect(function()
         active = false
     end)
     
     task.spawn(function()
-        local displayedCount = 0
+        local lastProcessedCount = -1
         while active do
             pcall(function()
                 local response = HttpService:GetAsync(SERVER_URL .. "/messages")
                 local data = HttpService:JSONDecode(response)
                 
-                if #data > displayedCount then
-                    for i = displayedCount + 1, #data do
-                        local m = data[i]
-                        addChatMessage(m.user, m.uid, m.message)
+                if type(data) == "table" then
+                    if lastProcessedCount == -1 then
+                        -- Pehli baar mein saare purane messages load karo taaki screen khali na rahe
+                        for _, m in ipairs(data) do
+                            if m.user and m.message then
+                                addChatMessage(m.user, m.uid or 0, m.message)
+                            end
+                        end
+                        lastProcessedCount = #data
+                    elseif #data > lastProcessedCount then
+                        -- Naye messages aane par sirf naye wale render honge
+                        for i = lastProcessedCount + 1, #data do
+                            local m = data[i]
+                            if m and m.user and m.message then
+                                addChatMessage(m.user, m.uid or 0, m.message)
+                            end
+                        end
+                        lastProcessedCount = #data
                     end
-                    displayedCount = #data
                 end
             end)
-            task.wait(3)
+            task.wait(2) -- Har 2 second mein fast sync
         end
     end)
 end
@@ -376,7 +390,7 @@ local function loadCreditSection()
     creditText.TextWrapped = true
     creditText.TextYAlignment = Enum.TextYAlignment.Top
     creditText.TextXAlignment = Enum.TextXAlignment.Left
-    creditText.Text = "--- Credits ---\nScript Created by: Yuvi\nRepository: SUMITKABAAPYUVI\n\nFeatures:\n- Custom Minimize & Terminate Controls\n- Global Cross-Server Backend Sync\n- Circular Avatar (PFP) & Name Identity\n\nEnjoy!"
+    creditText.Text = "--- Credits ---\nScript Created by: Yuvi\nRepository: SUMITKABAAPYUVI\n\nFeatures:\n- Minimize (-) & Terminate (X) Controls\n- Global Cross-Server Live Chat Sync\n- Circular Avatar (PFP) & Name Identity\n\nEnjoy!"
     creditText.Parent = contentArea
 end
 
@@ -388,4 +402,4 @@ btnCredit.MouseButton1Click:Connect(loadCreditSection)
 -- Default open Chat on startup
 loadChatSection()
 
-print("Yuvi DEVTA CHATS 💋🐍🦅!")
+print("Yuvi Custom Global Chat Fixed & Fully Loaded!")
