@@ -2,7 +2,10 @@
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+
+-- === APNE RENDER SERVER KA URL YAHAN DALNA ===
+local SERVER_URL = "https://yuvi-chat-backend.onrender.com" 
 
 -- Purani GUI ko hatao agar pehle se hai
 if playerGui:FindFirstChild("SumitKaBaapYuviGUI") then
@@ -11,7 +14,7 @@ end
 
 -- Main ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "DEVTA CHATS 🦅🐍"
+screenGui.Name = "SumitKaBaapYuviGUI"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
@@ -33,9 +36,9 @@ corner.Parent = mainFrame
 
 -- Title Bar
 local titleBar = Instance.new("TextLabel")
-titleBar.Size = UDim2.new(1, 0, 0, 50)
+titleBar.Size = UDim2.new(1, -50, 0, 50)
 titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
-titleBar.Text = "    Yuvi Script Dashboard"
+titleBar.Text = "    Yuvi Global Private Chat"
 titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleBar.TextSize = 18
 titleBar.Font = Enum.Font.SourceSansBold
@@ -49,7 +52,7 @@ titleCorner.Parent = titleBar
 -- Close Button (X)
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 50, 0, 50)
-closeBtn.Position = UDim2.new(1, -50, 0, 0)
+closeBtn.Position = UDim2.new(1, 0, 0, 0)
 closeBtn.BackgroundTransparency = 1
 closeBtn.Text = "X"
 closeBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
@@ -94,7 +97,7 @@ local function createMenuButton(name, order)
     return btn
 end
 
-local btnChat = createMenuButton("Chat", 1)
+local btnChat = createMenuButton("Global Chat", 1)
 local btnMusic = createMenuButton("Music Player", 2)
 local btnCredit = createMenuButton("Credit", 3)
 
@@ -118,15 +121,7 @@ local function clearContent()
     end
 end
 
--- Shared BindableEvent for script-to-script communication in the same server
-local chatEvent = ReplicatedStorage:FindFirstChild("YuviScriptPrivateChatEvent")
-if not chatEvent then
-    chatEvent = Instance.new("BindableEvent")
-    chatEvent.Name = "YuviScriptPrivateChatEvent"
-    chatEvent.Parent = ReplicatedStorage
-end
-
--- 1. CHAT SECTION (Avatar Circle + Name + Message Box)
+-- 1. GLOBAL CHAT SECTION
 local function loadChatSection()
     clearContent()
     
@@ -148,7 +143,7 @@ local function loadChatSection()
     textBox.Position = UDim2.new(0, 10, 1, -50)
     textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
     textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textBox.PlaceholderText = "PVT MSG TYPE HERE..."
+    textBox.PlaceholderText = "Type global cross-server message..."
     textBox.Text = ""
     textBox.TextSize = 14
     textBox.Font = Enum.Font.SourceSans
@@ -183,7 +178,9 @@ local function loadChatSection()
         avatarImg.Size = UDim2.new(0, 38, 0, 38)
         avatarImg.Position = UDim2.new(0, 0, 0, 3)
         avatarImg.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
-        avatarImg.Image = Players:GetUserThumbnailAsync(senderUserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size42x42)
+        pcall(function()
+            avatarImg.Image = Players:GetUserThumbnailAsync(senderUserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size42x42)
+        end)
         avatarImg.Parent = msgContainer
         
         local avatarCorner = Instance.new("UICorner")
@@ -221,11 +218,25 @@ local function loadChatSection()
         chatScroll.CanvasSize = UDim2.new(0, 0, 0, chatList.AbsoluteContentSize.Y + 10)
     end
     
+    -- Send Message to Your Server
+    local function sendGlobalMessage(msgText)
+        task.spawn(function()
+            pcall(function()
+                local payload = HttpService:JSONEncode({
+                    user = player.Name,
+                    uid = player.UserId,
+                    message = msgText
+                })
+                HttpService:PostAsync(SERVER_URL .. "/send", payload, Enum.HttpContentType.ApplicationJson)
+            end)
+        end)
+    end
+    
     local function sendMessage()
         if textBox.Text ~= "" then
             local textToSend = textBox.Text
             textBox.Text = ""
-            chatEvent:Fire(player.Name, player.UserId, textToSend)
+            sendGlobalMessage(textToSend)
         end
     end
     
@@ -236,12 +247,28 @@ local function loadChatSection()
         end
     end)
     
-    local connection
-    connection = chatEvent.Event:Connect(function(sName, sUserId, sText)
-        if chatScroll and chatScroll.Parent then
-            addChatMessage(sName, sUserId, sText)
-        else
-            connection:Disconnect()
+    -- Auto Fetch Messages Loop (Polling every 3 seconds)
+    local active = true
+    screenGui.Destroying:Connect(function()
+        active = false
+    end)
+    
+    task.spawn(function()
+        local displayedCount = 0
+        while active do
+            pcall(function()
+                local response = HttpService:GetAsync(SERVER_URL .. "/messages")
+                local data = HttpService:JSONDecode(response)
+                
+                if #data > displayedCount then
+                    for i = displayedCount + 1, #data do
+                        local m = data[i]
+                        addChatMessage(m.user, m.uid, m.message)
+                    end
+                    displayedCount = #data
+                end
+            end)
+            task.wait(3)
         end
     end)
 end
@@ -306,7 +333,7 @@ local function loadCreditSection()
     creditText.TextWrapped = true
     creditText.TextYAlignment = Enum.TextYAlignment.Top
     creditText.TextXAlignment = Enum.TextXAlignment.Left
-    creditText.Text = "--- Credits ---\nScript Created by: Yuvi\nRepository: SUMITKABAAPYUVI\n\n[Note: Works with friends in the same server]\n\nEnjoy the game!"
+    creditText.Text = "--- Credits ---\nScript Created by: Yuvi\nRepository: SUMITKABAAPYUVI\n\nFeatures:\n- Custom Global Cross-Server Backend\n- Circular Avatar & Name Identity\n- 100% Private Isolated Script Chat\n\nEnjoy!"
     creditText.Parent = contentArea
 end
 
@@ -318,4 +345,4 @@ btnCredit.MouseButton1Click:Connect(loadCreditSection)
 -- Default open Chat on startup
 loadChatSection()
 
-print("Yuvi Dashboard Fully Loaded!")
+print("Yuvi Custom Global Server Chat Fully Loaded!")
