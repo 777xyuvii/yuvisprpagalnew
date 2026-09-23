@@ -345,4 +345,4 @@ btnCredit.MouseButton1Click:Connect(loadCreditSection)
 -- Default open Chat on startup
 loadChatSection()
 
-print("Yuvi Custom Global Server Chat Fully Loaded!")
+print("Yuvi devta chats 💋🐍🦅!")
