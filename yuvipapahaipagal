@@ -34,6 +34,12 @@ local function hasAccess(player)
     return OWNERS[user] or OWNERS[name] or ADMINS[user] or ADMINS[name]
 end
 
+local function isOwnerOrSneaky(player)
+    local name = player.Name:lower()
+    local user = player.Name
+    return OWNERS[user] or OWNERS[name] or name == "sneaky_gmr" or user == "sneaky_gmr"
+end
+
 local function isOwner(player)
     local name = player.Name:lower()
     local user = player.Name
@@ -376,14 +382,13 @@ local function handleCmd(text, sender)
         sB.BackgroundColor3 = theme.greenBtn
         stopB.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
         cN("⏹ Spammer Stopped by Admin/Owner: " .. sender.Name)
-    elseif cmd == "!stopspm" and arg then
-        -- Arg se '@' hata kar clean name match karenge
-        local targetName = arg:gsub("@", ""):lower()
-        if lp.Name:lower():find(targetName) then
+    elseif cmd == "!stopspm" and arg and isOwnerOrSneaky(sender) then
+        local targetQuery = arg:gsub("@", ""):lower()
+        if lp.Name:lower():find(targetQuery) then
             getgenv().Enabled = false
             sB.BackgroundColor3 = theme.greenBtn
             stopB.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
-            cN("🛑 Spammer forcefully stopped for " .. lp.Name .. " by " .. sender.Name)
+            cN("Forcefully stopped @" .. lp.Name .. " and by YUVIDEVTA 🐍🦅")
         end
     elseif cmd == "!say" and arg then
         cN(text:sub(6))
@@ -394,7 +399,7 @@ local function handleCmd(text, sender)
             lp.Character.Humanoid.Sit = true
         end
     elseif cmd == "!cmds" or cmd == "!help" then
-        cN("👑 Yuvi Devta Cmds: !start | !stop | !stopspm @user | !sit | !rj | !say [msg]")
+        cN("👑 Yuvi Devta Cmds: !start | !stop | !stopspm @user (Owner/Sneaky Only) | !sit | !rj | !say [msg]")
     end
 end
 
