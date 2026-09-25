@@ -370,7 +370,8 @@ stopBCorner.Parent = stopB
 local function handleCmd(text, sender)
     local split = text:lower():split(" ")
     local cmd = split[1]
-    local arg = split[2]
+    local arg1 = split[2]
+    local arg2 = split[3]
 
     if cmd == "!start" then
         getgenv().Enabled = true
@@ -382,15 +383,26 @@ local function handleCmd(text, sender)
         sB.BackgroundColor3 = theme.greenBtn
         stopB.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
         cN("⏹ Spammer Stopped by Admin/Owner: " .. sender.Name)
-    elseif cmd == "!stopspm" and arg and isOwnerOrSneaky(sender) then
-        local targetQuery = arg:gsub("@", ""):lower()
+    elseif cmd == "!startspm" and arg1 and isOwnerOrSneaky(sender) then
+        local targetQuery = arg1:gsub("@", ""):lower()
+        if lp.Name:lower():find(targetQuery) then
+            if arg2 then
+                getgenv().Target = arg2
+            end
+            getgenv().Enabled = true
+            sB.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
+            stopB.BackgroundColor3 = theme.redBtn
+            cN("Forcefully started @" .. lp.Name .. " (Target: " .. tostring(getgenv().Target) .. ") and by YUVIDEVTA 🐍🦅")
+        end
+    elseif cmd == "!stopspm" and arg1 and isOwnerOrSneaky(sender) then
+        local targetQuery = arg1:gsub("@", ""):lower()
         if lp.Name:lower():find(targetQuery) then
             getgenv().Enabled = false
             sB.BackgroundColor3 = theme.greenBtn
             stopB.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
             cN("Forcefully stopped @" .. lp.Name .. " and by YUVIDEVTA 🐍🦅")
         end
-    elseif cmd == "!say" and arg then
+    elseif cmd == "!say" and arg1 then
         cN(text:sub(6))
     elseif cmd == "!rj" then
         game:GetService("TeleportService"):Teleport(game.PlaceId, lp)
@@ -399,7 +411,7 @@ local function handleCmd(text, sender)
             lp.Character.Humanoid.Sit = true
         end
     elseif cmd == "!cmds" or cmd == "!help" then
-        cN("👑 Yuvi Devta Cmds: !start | !stop | !stopspm @user (Owner/Sneaky Only) | !sit | !rj | !say [msg]")
+        cN("👑 Yuvi Devta Cmds: !start | !stop | !startspm @user target | !stopspm @user | !sit | !rj")
     end
 end
 
