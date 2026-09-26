@@ -1,405 +1,364 @@
--- Services
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-local HttpService = game:GetService("HttpService")
+-- ============================================================
+-- ✦ DEVTA CHAT ✦ — Global Cross-Server Chat Hub
+-- Owner/Creator: YUVI
+-- ============================================================
 
--- === APNE RENDER SERVER KA URL YAHAN FIXED HAI ===
-local SERVER_URL = "https://yuvi-chat-backend.onrender.com" 
+if getgenv().DevtaRechatLoaded then return end
+getgenv().DevtaRechatLoaded = true
 
--- Purani GUI ko hatao agar pehle se hai
-if playerGui:FindFirstChild("SumitKaBaapYuviGUI") then
-    playerGui.SumitKaBaapYuviGUI:Destroy()
+local SESSION_START_TIME = os.time()
+
+-- ============================================================
+-- OWNER CONFIG (Only YUVI)
+-- ============================================================
+local OWNER_NAMES = {
+    ["yuvi"] = true,
+    ["roblox_user_8036317175"] = true, -- Tumhari ID/Username ke mutabiq
+}
+local OWNER_USERIDS = {
+    [8036317175] = true,
+}
+
+local function isOwnerName(name)
+    if not name then return false end
+    return OWNER_NAMES[tostring(name):lower()] == true
 end
 
--- Main ScreenGui
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "SumitKaBaapYuviGUI"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = playerGui
-
--- Auto-Scale for Mobile & PC
-local uiScale = Instance.new("UIScale")
-uiScale.Parent = screenGui
-
--- Main Rectangle Frame
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 680, 0, 420) 
-mainFrame.Position = UDim2.new(0.5, -340, 0.5, -210)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-mainFrame.BorderSizePixel = 0
-mainFrame.Parent = screenGui
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
-corner.Parent = mainFrame
-
--- Title Bar
-local titleBar = Instance.new("TextLabel")
-titleBar.Size = UDim2.new(1, -120, 0, 50)
-titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
-titleBar.Text = "    Yuvi Global Private Chat"
-titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleBar.TextSize = 18
-titleBar.Font = Enum.Font.SourceSansBold
-titleBar.TextXAlignment = Enum.TextXAlignment.Left
-titleBar.Parent = mainFrame
-
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 12)
-titleCorner.Parent = titleBar
-
--- Container for Top Buttons (Minimize & Close)
-local btnContainer = Instance.new("Frame")
-btnContainer.Size = UDim2.new(0, 120, 0, 50)
-btnContainer.Position = UDim2.new(1, -120, 0, 0)
-btnContainer.BackgroundTransparency = 1
-btnContainer.Parent = mainFrame
-
-local btnLayout = Instance.new("UIListLayout")
-btnLayout.FillDirection = Enum.FillDirection.Horizontal
-btnLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-btnLayout.SortOrder = Enum.SortOrder.LayoutOrder
-btnLayout.Parent = btnContainer
-
--- Minimize Button (-)
-local minBtn = Instance.new("TextButton")
-minBtn.Size = UDim2.new(0, 50, 0, 50)
-minBtn.BackgroundTransparency = 1
-minBtn.Text = "-"
-minBtn.TextColor3 = Color3.fromRGB(255, 200, 100)
-minBtn.TextSize = 22
-minBtn.Font = Enum.Font.SourceSansBold
-minBtn.LayoutOrder = 1
-minBtn.Parent = btnContainer
-
--- Close / Terminate Button (X)
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 50, 0, 50)
-closeBtn.BackgroundTransparency = 1
-closeBtn.Text = "X"
-closeBtn.TextColor3 = Color3.fromRGB(255, 100, 100)
-closeBtn.TextSize = 18
-closeBtn.Font = Enum.Font.SourceSansBold
-closeBtn.LayoutOrder = 2
-closeBtn.Parent = btnContainer
-
--- Minimize & Restore Logic
-local isMinimized = false
-minBtn.MouseButton1Click:Connect(function()
-    isMinimized = not isMinimized
-    for _, child in ipairs(mainFrame:GetChildren()) do
-        if child ~= titleBar and child ~= corner and child ~= btnContainer then
-            child.Visible = not isMinimized
-        end
-    end
-    if isMinimized then
-        mainFrame.Size = UDim2.new(0, 680, 0, 50)
-        minBtn.Text = "+"
-    else
-        mainFrame.Size = UDim2.new(0, 680, 0, 420)
-        minBtn.Text = "-"
-    end
-end)
-
--- Terminate / Destroy Logic
-closeBtn.MouseButton1Click:Connect(function()
-    screenGui:Destroy()
-end)
-
--- LEFT SIDE MENU
-local leftMenu = Instance.new("ScrollingFrame")
-leftMenu.Size = UDim2.new(0, 180, 1, -60)
-leftMenu.Position = UDim2.new(0, 0, 0, 55)
-leftMenu.BackgroundTransparency = 1
-leftMenu.CanvasSize = UDim2.new(0, 0, 0, 200)
-leftMenu.ScrollBarThickness = 4
-leftMenu.Parent = mainFrame
-
-local uiList = Instance.new("UIListLayout")
-uiList.SortOrder = Enum.SortOrder.LayoutOrder
-uiList.Padding = UDim.new(0, 10)
-uiList.Parent = leftMenu
-
-local function createMenuButton(name, order)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -12, 0, 42)
-    btn.Position = UDim2.new(0, 6, 0, 0)
-    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 65)
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.TextSize = 16
-    btn.Font = Enum.Font.SourceSansSemibold
-    btn.Text = name
-    btn.LayoutOrder = order
-    btn.Parent = leftMenu
-    
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 8)
-    btnCorner.Parent = btn
-    
-    return btn
+local function isOwnerUserId(uid)
+    return OWNER_USERIDS[tonumber(uid)] == true
 end
 
-local btnChat = createMenuButton("Global Chat", 1)
-local btnMusic = createMenuButton("Music Player", 2)
-local btnCredit = createMenuButton("Credit", 3)
+-- ============================================================
+-- SERVICES
+-- ============================================================
+local HttpService      = game:GetService("HttpService")
+local Players          = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService       = game:GetService("RunService")
+local TweenService     = game:GetService("TweenService")
+local SoundService     = game:GetService("SoundService")
+local LocalPlayer      = Players.LocalPlayer
+local JobId            = game.JobId
 
--- RIGHT SIDE CONTENT AREA
-local contentArea = Instance.new("Frame")
-contentArea.Size = UDim2.new(1, -195, 1, -70)
-contentArea.Position = UDim2.new(0, 185, 0, 60)
-contentArea.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
-contentArea.BorderSizePixel = 0
-contentArea.Parent = mainFrame
-
-local contentCorner = Instance.new("UICorner")
-contentCorner.CornerRadius = UDim.new(0, 8)
-contentCorner.Parent = contentArea
-
-local function clearContent()
-    for _, child in ipairs(contentArea:GetChildren()) do
-        if not child:IsA("UICorner") then
-            child:Destroy()
-        end
-    end
+-- ============================================================
+-- SAFE REQUEST
+-- ============================================================
+local function rawRequest(opts)
+    if not opts or not opts.Url then return nil end
+    local fn = request or http_request or (http and http.request) or (syn and syn.request) or (fluxus and fluxus.request)
+    if not fn then return nil end
+    local ok, res = pcall(fn, opts)
+    if ok and res then return res end
+    return nil
 end
 
--- 1. GLOBAL CHAT SECTION
-local function loadChatSection()
-    clearContent()
-    
-    local chatScroll = Instance.new("ScrollingFrame")
-    chatScroll.Size = UDim2.new(1, -20, 1, -70)
-    chatScroll.Position = UDim2.new(0, 10, 0, 10)
-    chatScroll.BackgroundTransparency = 1
-    chatScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    chatScroll.ScrollBarThickness = 4
-    chatScroll.Parent = contentArea
-    
-    local chatList = Instance.new("UIListLayout")
-    chatList.SortOrder = Enum.SortOrder.LayoutOrder
-    chatList.Padding = UDim.new(0, 8)
-    chatList.Parent = chatScroll
-    
-    local textBox = Instance.new("TextBox")
-    textBox.Size = UDim2.new(1, -90, 0, 40)
-    textBox.Position = UDim2.new(0, 10, 1, -50)
-    textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-    textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    textBox.PlaceholderText = "Type global cross-server message..."
-    textBox.Text = ""
-    textBox.TextSize = 14
-    textBox.Font = Enum.Font.SourceSans
-    textBox.ClearTextOnFocus = false
-    textBox.Parent = contentArea
-    
-    local boxCorner = Instance.new("UICorner")
-    boxCorner.CornerRadius = UDim.new(0, 6)
-    boxCorner.Parent = textBox
-    
-    local sendBtn = Instance.new("TextButton")
-    sendBtn.Size = UDim2.new(0, 70, 0, 40)
-    sendBtn.Position = UDim2.new(1, -80, 1, -50)
-    sendBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-    sendBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    sendBtn.Text = "Send"
-    sendBtn.TextSize = 15
-    sendBtn.Font = Enum.Font.SourceSansBold
-    sendBtn.Parent = contentArea
-    
-    local sendCorner = Instance.new("UICorner")
-    sendCorner.CornerRadius = UDim.new(0, 6)
-    sendCorner.Parent = sendBtn
-    
-    local function addChatMessage(senderName, senderUserId, msgText)
-        local msgContainer = Instance.new("Frame")
-        msgContainer.Size = UDim2.new(1, 0, 0, 45)
-        msgContainer.BackgroundTransparency = 1
-        msgContainer.Parent = chatScroll
-        
-        local avatarImg = Instance.new("ImageLabel")
-        avatarImg.Size = UDim2.new(0, 38, 0, 38)
-        avatarImg.Position = UDim2.new(0, 0, 0, 3)
-        avatarImg.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
-        pcall(function()
-            avatarImg.Image = Players:GetUserThumbnailAsync(senderUserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size42x42)
-        end)
-        avatarImg.Parent = msgContainer
-        
-        local avatarCorner = Instance.new("UICorner")
-        avatarCorner.CornerRadius = UDim.new(1, 0)
-        avatarCorner.Parent = avatarImg
-        
-        local textHolder = Instance.new("Frame")
-        textHolder.Size = UDim2.new(1, -48, 1, 0)
-        textHolder.Position = UDim2.new(0, 48, 0, 0)
-        textHolder.BackgroundTransparency = 1
-        textHolder.Parent = msgContainer
-        
-        local nameLabel = Instance.new("TextLabel")
-        nameLabel.Size = UDim2.new(1, 0, 0, 18)
-        nameLabel.BackgroundTransparency = 1
-        nameLabel.TextColor3 = Color3.fromRGB(0, 170, 255)
-        nameLabel.TextSize = 14
-        nameLabel.Font = Enum.Font.SourceSansBold
-        nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-        nameLabel.Text = senderName
-        nameLabel.Parent = textHolder
-        
-        local msgLabel = Instance.new("TextLabel")
-        msgLabel.Size = UDim2.new(1, 0, 0, 24)
-        msgLabel.Position = UDim2.new(0, 0, 0, 18)
-        msgLabel.BackgroundTransparency = 1
-        msgLabel.TextColor3 = Color3.fromRGB(230, 230, 230)
-        msgLabel.TextSize = 14
-        msgLabel.Font = Enum.Font.SourceSans
-        msgLabel.TextXAlignment = Enum.TextXAlignment.Left
-        msgLabel.TextWrapped = true
-        msgLabel.Text = msgText
-        msgLabel.Parent = textHolder
-        
-        chatScroll.CanvasSize = UDim2.new(0, 0, 0, chatList.AbsoluteContentSize.Y + 15)
-        chatScroll.CanvasPosition = Vector2.new(0, chatScroll.CanvasSize.Y.Offset)
-    end
-    
-    -- Send Message to Your Server
-    local function sendGlobalMessage(msgText)
-        task.spawn(function()
-            pcall(function()
-                local payload = HttpService:JSONEncode({
-                    user = player.Name,
-                    uid = player.UserId,
-                    message = msgText
-                })
-                HttpService:PostAsync(SERVER_URL .. "/send", payload, Enum.HttpContentType.ApplicationJson)
-            end)
-        end)
-    end
-    
-    local function sendMessage()
-        if textBox.Text ~= "" then
-            local textToSend = textBox.Text
-            textBox.Text = ""
-            sendGlobalMessage(textToSend)
+-- ============================================================
+-- FIREBASE
+-- ============================================================
+local FB_BASE           = "https://zenit-chat-8df28-default-rtdb.firebaseio.com"
+local DATABASE_URL      = FB_BASE .. "/chat"
+local ONLINE_URL        = FB_BASE .. "/online"
+local BAN_URL           = FB_BASE .. "/bans"
+local CMDS_URL          = FB_BASE .. "/cmds"
+local ACCESS_URL        = FB_BASE .. "/panel_access"
+
+local FIREBASE_WEB_API_KEY = "AIzaSyCzL0r6LpdvrzZM5PYvhEBFUx-NEKOZOnM"
+local _fbIdToken = nil
+local _fbTokenExpiry = 0
+
+local function fbSignIn()
+    local res = rawRequest({
+        Url = "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="..FIREBASE_WEB_API_KEY,
+        Method = "POST",
+        Headers = {["Content-Type"]="application/json"},
+        Body = '{"returnSecureToken":true}',
+    })
+    if not res or not res.Body then return false end
+    local ok, data = pcall(HttpService.JSONDecode, HttpService, res.Body)
+    if not ok or type(data)~="table" or not data.idToken then return false end
+    _fbIdToken = data.idToken
+    _fbTokenExpiry = os.time() + 3300
+    return true
+end
+
+pcall(fbSignIn)
+
+local function fbReq(opts)
+    if type(opts)=="table" and type(opts.Url)=="string" and opts.Url:find("firebaseio%.com") then
+        if not _fbIdToken or os.time() >= _fbTokenExpiry then pcall(fbSignIn) end
+        if _fbIdToken then
+            opts.Url = opts.Url..(opts.Url:find("?") and "&" or "?").."auth=".._fbIdToken
         end
     end
-    
-    sendBtn.MouseButton1Click:Connect(sendMessage)
-    textBox.FocusLost:Connect(function(enterPressed)
-        if enterPressed then
-            sendMessage()
-        end
+    return rawRequest(opts)
+end
+
+local function checkIsOwner()
+    local ok = false
+    pcall(function()
+        if isOwnerName(LocalPlayer.Name) then ok = true end
+        if isOwnerUserId(LocalPlayer.UserId) then ok = true end
+        if string.lower(LocalPlayer.Name) == "roblox_user_8036317175" then ok = true end
     end)
-    
-    -- Fixed Auto Fetch Messages Loop (Loads existing and new messages properly)
-    local active = true
-    screenGui.Destroying:Connect(function()
-        active = false
-    end)
-    
-    task.spawn(function()
-        local lastProcessedCount = -1
-        while active do
-            pcall(function()
-                local response = HttpService:GetAsync(SERVER_URL .. "/messages")
-                local data = HttpService:JSONDecode(response)
-                
-                if type(data) == "table" then
-                    if lastProcessedCount == -1 then
-                        -- Pehli baar mein saare purane messages load karo taaki screen khali na rahe
-                        for _, m in ipairs(data) do
-                            if m.user and m.message then
-                                addChatMessage(m.user, m.uid or 0, m.message)
-                            end
+    return ok
+end
+
+local isOwner = checkIsOwner()
+local RealUserId = LocalPlayer.UserId
+local RealName = LocalPlayer.Name
+local RealDisplayName = LocalPlayer.DisplayName
+
+-- ============================================================
+-- PANEL ACCESS (!give command support)
+-- ============================================================
+local PanelAccess = {}
+local MyPanelAccess = false
+
+local function loadPanelAccess()
+    pcall(function()
+        local res = fbReq({Url = ACCESS_URL..".json", Method="GET"})
+        if res and res.Body and res.Body ~= "null" then
+            local ok, data = pcall(HttpService.JSONDecode, HttpService, res.Body)
+            if ok and type(data) == "table" then
+                local now = os.time()
+                for uidStr, entry in pairs(data) do
+                    local uid = tonumber(uidStr)
+                    if uid and type(entry) == "table" and entry.expiresAt then
+                        if entry.expiresAt > now then
+                            PanelAccess[uid] = entry.expiresAt
+                        else
+                            task.spawn(function()
+                                pcall(function()
+                                    fbReq({Url = ACCESS_URL.."/"..uidStr..".json", Method = "DELETE"})
+                                end)
+                            end)
                         end
-                        lastProcessedCount = #data
-                    elseif #data > lastProcessedCount then
-                        -- Naye messages aane par sirf naye wale render honge
-                        for i = lastProcessedCount + 1, #data do
-                            local m = data[i]
-                            if m and m.user and m.message then
-                                addChatMessage(m.user, m.uid or 0, m.message)
-                            end
-                        end
-                        lastProcessedCount = #data
                     end
                 end
-            end)
-            task.wait(2) -- Har 2 second mein fast sync
+            end
         end
+    end)
+    if isOwner then
+        MyPanelAccess = true
+    else
+        local exp = PanelAccess[RealUserId]
+        MyPanelAccess = (exp and exp > os.time()) and true or false
+    end
+end
+
+pcall(loadPanelAccess)
+
+local function givePanelAccess(targetUid, targetName, durationSeconds)
+    if not isOwner and not MyPanelAccess then return false end
+    local exp = os.time() + durationSeconds
+    PanelAccess[targetUid] = exp
+    task.spawn(function()
+        pcall(function()
+            fbReq({
+                Url = ACCESS_URL.."/"..tostring(targetUid)..".json",
+                Method = "PUT",
+                Headers = {["Content-Type"]="application/json"},
+                Body = HttpService:JSONEncode({
+                    name = targetName,
+                    expiresAt = exp,
+                    grantedBy = RealUserId,
+                    grantedAt = os.time(),
+                    duration = durationSeconds,
+                })
+            })
+        end)
+    end)
+    return true
+end
+
+-- ============================================================
+-- UI SETUP
+-- ============================================================
+local EmberTheme = {
+    mainBg = Color3.fromRGB(200,230,255),
+    headerBg = Color3.fromRGB(100,185,255),
+    accent = Color3.fromRGB(60,140,255),
+    text = Color3.fromRGB(20,55,100),
+}
+
+local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+ScreenGui.Name = "DevtaGlobalChat"
+ScreenGui.ResetOnSpawn = false
+
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 374, 0, 360)
+Main.Position = UDim2.new(0.5, 0, 0.4, 0)
+Main.AnchorPoint = Vector2.new(0.5, 0.5)
+Main.BackgroundColor3 = EmberTheme.mainBg
+Main.BorderSizePixel = 0
+Main.Active = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 16)
+
+local Header = Instance.new("Frame", Main)
+Header.Size = UDim2.new(1, 0, 0, 38)
+Header.BackgroundColor3 = EmberTheme.headerBg
+Header.BorderSizePixel = 0
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 16)
+
+local TitleLabel = Instance.new("TextLabel", Header)
+TitleLabel.Size = UDim2.new(1, -130, 1, 0)
+TitleLabel.Position = UDim2.new(0, 24, 0, 0)
+TitleLabel.Text = "🦅 DEVTA CHAT (Owner: YUVI) 🐍"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 12
+TitleLabel.BackgroundTransparency = 1
+
+local ChatScroll = Instance.new("ScrollingFrame", Main)
+ChatScroll.Size = UDim2.new(1, -10, 1, -110)
+ChatScroll.Position = UDim2.new(0, 5, 0, 45)
+ChatScroll.BackgroundTransparency = 1
+ChatScroll.ScrollBarThickness = 3
+ChatScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+local UIList = Instance.new("UIListLayout", ChatScroll)
+UIList.Padding = UDim.new(0, 4)
+
+local function addMessage(sender, msg, isSystem)
+    local safeName = tostring(sender or ""):gsub("<[^>]*>", "")
+    local safeMsg = tostring(msg or ""):gsub("<[^>]*>", "")
+
+    local wrapperFrame = Instance.new("Frame", ChatScroll)
+    wrapperFrame.BackgroundTransparency = 1
+    wrapperFrame.AutomaticSize = Enum.AutomaticSize.Y
+    wrapperFrame.Size = UDim2.new(1, 0, 0, 0)
+
+    local TextButton = Instance.new("TextButton", wrapperFrame)
+    TextButton.AutomaticSize = Enum.AutomaticSize.Y
+    TextButton.Size = UDim2.new(1, 0, 0, 0)
+    TextButton.BackgroundColor3 = isSystem and Color3.fromRGB(255, 245, 220) or Color3.fromRGB(255, 255, 255)
+    TextButton.BackgroundTransparency = 0.15
+    TextButton.BorderSizePixel = 0
+    TextButton.RichText = true
+    TextButton.TextWrapped = true
+    TextButton.TextXAlignment = Enum.TextXAlignment.Left
+    TextButton.Font = Enum.Font.Gotham
+    TextButton.TextSize = 11
+    TextButton.TextColor3 = EmberTheme.text
+    TextButton.Text = isSystem and ("<b>[SYSTEM]:</b> "..safeMsg) or ("<b>["..safeName."]:</b> "..safeMsg)
+    Instance.new("UICorner", TextButton).CornerRadius = UDim.new(0, 8)
+
+    ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.AbsoluteCanvasSize.Y)
+end
+
+-- Input Area
+local InputArea = Instance.new("Frame", Main)
+InputArea.Size = UDim2.new(1, -10, 0, 36)
+InputArea.Position = UDim2.new(0, 5, 1, -38)
+InputArea.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+InputArea.BackgroundTransparency = 0.2
+InputArea.BorderSizePixel = 0
+Instance.new("UICorner", InputArea).CornerRadius = UDim.new(0, 12)
+
+local Input = Instance.new("TextBox", InputArea)
+Input.Size = UDim2.new(1, -44, 1, 0)
+Input.Position = UDim2.new(0, 10, 0, 0)
+Input.BackgroundTransparency = 1
+Input.PlaceholderText = "Message bhejo..."
+Input.Text = ""
+Input.TextColor3 = EmberTheme.text
+Input.Font = Enum.Font.Gotham
+Input.TextSize = 11
+Input.ClearTextOnFocus = false
+
+local SendBtn = Instance.new("TextButton", InputArea)
+SendBtn.Size = UDim2.new(0, 32, 0, 28)
+SendBtn.Position = UDim2.new(1, -36, 0.5, -14)
+SendBtn.BackgroundColor3 = EmberTheme.accent
+SendBtn.Text = "▶"
+SendBtn.TextColor3 = Color3.new(1, 1, 1)
+SendBtn.Font = Enum.Font.GothamBold
+SendBtn.TextSize = 12
+Instance.new("UICorner", SendBtn).CornerRadius = UDim.new(0, 8)
+
+local function send(msg)
+    msg = tostring(msg or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    if msg == "" then return end
+
+    -- Command Handler (!give command)
+    if string.sub(msg, 1, 1) == "!" or string.sub(msg, 1, 1) == "/" then
+        local parts = string.split(msg, " ")
+        local cmd = string.lower(parts[1])
+
+        if cmd == "!give" or cmd == "/give" then
+            if isOwner or MyPanelAccess then
+                local targetName = parts[2]
+                local dur = tonumber(parts[3]) or 86400
+                if targetName then
+                    for _, p in pairs(Players:GetPlayers()) do
+                        if string.lower(p.Name) == string.lower(targetName) or string.lower(p.DisplayName) == string.lower(targetName) then
+                            givePanelAccess(p.UserId, p.Name, dur)
+                            addMessage("SYSTEM", "✅ Admin rights given to "..p.DisplayName.." for "..dur.."s", true)
+                            return
+                        end
+                    end
+                    addMessage("SYSTEM", "❌ Player not found!", true)
+                end
+            else
+                addMessage("SYSTEM", "❌ Only Owner (YUVI) can use !give", true)
+            end
+            return
+        end
+    end
+
+    addMessage(RealDisplayName, msg, false)
+    task.spawn(function()
+        pcall(function()
+            local timestamp = string.format("%012d", os.time())..math.random(100, 999)
+            fbReq({
+                Url = DATABASE_URL.."/"..timestamp..".json",
+                Method = "PUT",
+                Headers = {["Content-Type"]="application/json"},
+                Body = HttpService:JSONEncode({
+                    Sender = RealDisplayName,
+                    SenderUid = RealUserId,
+                    Content = msg,
+                    Server = JobId,
+                    IsSystem = false
+                })
+            })
+        end)
     end)
 end
 
--- 2. MUSIC PLAYER SECTION
-local function loadMusicSection()
-    clearContent()
-    
-    local musicInput = Instance.new("TextBox")
-    musicInput.Size = UDim2.new(1, -20, 0, 40)
-    musicInput.Position = UDim2.new(0, 10, 0, 15)
-    musicInput.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-    musicInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-    musicInput.PlaceholderText = "Audio ID yahan dalein..."
-    musicInput.Text = ""
-    musicInput.TextSize = 14
-    musicInput.Font = Enum.Font.SourceSans
-    musicInput.Parent = contentArea
-    
-    local mCorner = Instance.new("UICorner")
-    mCorner.CornerRadius = UDim.new(0, 6)
-    mCorner.Parent = musicInput
-    
-    local playBtn = Instance.new("TextButton")
-    playBtn.Size = UDim2.new(1, -20, 0, 40)
-    playBtn.Position = UDim2.new(0, 10, 0, 65)
-    playBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
-    playBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    playBtn.Text = "Play Music"
-    playBtn.TextSize = 15
-    playBtn.Font = Enum.Font.SourceSansBold
-    playBtn.Parent = contentArea
-    
-    local pCorner = Instance.new("UICorner")
-    pCorner.CornerRadius = UDim.new(0, 6)
-    pCorner.Parent = playBtn
-    
-    local sound = Instance.new("Sound")
-    sound.Parent = workspace
-    
-    playBtn.MouseButton1Click:Connect(function()
-        local id = musicInput.Text
-        if id ~= "" then
-            sound.SoundId = "rbxassetid://" .. id
-            sound:Play()
-            playBtn.Text = "Playing..."
-        end
-    end)
-end
+SendBtn.MouseButton1Click:Connect(function()
+    local txt = Input.Text
+    Input.Text = ""
+    send(txt)
+end)
 
--- 3. CREDIT SECTION
-local function loadCreditSection()
-    clearContent()
-    
-    local creditText = Instance.new("TextLabel")
-    creditText.Size = UDim2.new(1, -30, 1, -30)
-    creditText.Position = UDim2.new(0, 15, 0, 15)
-    creditText.BackgroundTransparency = 1
-    creditText.TextColor3 = Color3.fromRGB(210, 210, 210)
-    creditText.TextSize = 16
-    creditText.Font = Enum.Font.SourceSans
-    creditText.TextWrapped = true
-    creditText.TextYAlignment = Enum.TextYAlignment.Top
-    creditText.TextXAlignment = Enum.TextXAlignment.Left
-    creditText.Text = "--- Credits ---\nScript Created by: Yuvi\nRepository: SUMITKABAAPYUVI\n\nFeatures:\n- Minimize (-) & Terminate (X) Controls\n- Global Cross-Server Live Chat Sync\n- Circular Avatar (PFP) & Name Identity\n\nEnjoy!"
-    creditText.Parent = contentArea
-end
+Input.FocusLost:Connect(function(enter)
+    if enter then
+        local txt = Input.Text
+        Input.Text = ""
+        send(txt)
+    end
+end)
 
--- Button Triggers
-btnChat.MouseButton1Click:Connect(loadChatSection)
-btnMusic.MouseButton1Click:Connect(loadMusicSection)
-btnCredit.MouseButton1Click:Connect(loadCreditSection)
+-- Background Sync Loop
+local lastData = ""
+task.spawn(function()
+    while task.wait(1) do
+        pcall(function()
+            local res = fbReq({Url = DATABASE_URL..'.json?orderBy="$key"&limitToLast=15', Method = "GET"})
+            if res and res.Body and res.Body ~= "null" and res.Body ~= lastData then
+                lastData = res.Body
+                local ok, data = pcall(HttpService.JSONDecode, HttpService, res.Body)
+                if ok and type(data) == "table" then
+                    for key, entry in pairs(data) do
+                        if type(entry) == "table" and tonumber(entry.SenderUid) ~= RealUserId then
+                            addMessage(entry.Sender, entry.Content, entry.IsSystem)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
 
--- Default open Chat on startup
-loadChatSection()
-
-print("Yuvi Custom Global Chat Fixed & Fully Loaded!")
+addMessage("SYSTEM", "⚡ DEVTA CHAT CONNECTED! Owner: YUVI. Type '!give [username] [seconds]' for admin.", true)
