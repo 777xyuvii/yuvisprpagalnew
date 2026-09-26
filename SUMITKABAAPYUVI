@@ -1,364 +1,453 @@
 -- ============================================================
--- ✦ DEVTA CHAT ✦ — Global Cross-Server Chat Hub
--- Owner/Creator: YUVI
+-- 🦅 DEVTA CHAT HUB | Chat + Music + Admin Cmds + Spam System 🐍
+-- Owner: YUVI
 -- ============================================================
 
-if getgenv().DevtaRechatLoaded then return end
-getgenv().DevtaRechatLoaded = true
+if getgenv().DevtaHubLoaded then return end
+getgenv().DevtaHubLoaded = true
 
-local SESSION_START_TIME = os.time()
-
--- ============================================================
--- OWNER CONFIG (Only YUVI)
--- ============================================================
-local OWNER_NAMES = {
-    ["yuvi"] = true,
-    ["roblox_user_8036317175"] = true, -- Tumhari ID/Username ke mutabiq
-}
-local OWNER_USERIDS = {
-    [8036317175] = true,
-}
-
-local function isOwnerName(name)
-    if not name then return false end
-    return OWNER_NAMES[tostring(name):lower()] == true
-end
-
-local function isOwnerUserId(uid)
-    return OWNER_USERIDS[tonumber(uid)] == true
-end
-
--- ============================================================
--- SERVICES
--- ============================================================
+-- Services
 local HttpService      = game:GetService("HttpService")
 local Players          = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
-local RunService       = game:GetService("RunService")
 local TweenService     = game:GetService("TweenService")
 local SoundService     = game:GetService("SoundService")
 local LocalPlayer      = Players.LocalPlayer
 local JobId            = game.JobId
 
--- ============================================================
--- SAFE REQUEST
--- ============================================================
-local function rawRequest(opts)
-    if not opts or not opts.Url then return nil end
-    local fn = request or http_request or (http and http.request) or (syn and syn.request) or (fluxus and fluxus.request)
-    if not fn then return nil end
-    local ok, res = pcall(fn, opts)
-    if ok and res then return res end
-    return nil
-end
+-- Firebase Database Configuration
+local FB_BASE          = "https://zenit-chat-8df28-default-rtdb.firebaseio.com"
+local DATABASE_URL     = FB_BASE .. "/chat.json"
+local ACCESS_URL       = FB_BASE .. "/panel_access.json"
 
--- ============================================================
--- FIREBASE
--- ============================================================
-local FB_BASE           = "https://zenit-chat-8df28-default-rtdb.firebaseio.com"
-local DATABASE_URL      = FB_BASE .. "/chat"
-local ONLINE_URL        = FB_BASE .. "/online"
-local BAN_URL           = FB_BASE .. "/bans"
-local CMDS_URL          = FB_BASE .. "/cmds"
-local ACCESS_URL        = FB_BASE .. "/panel_access"
-
-local FIREBASE_WEB_API_KEY = "AIzaSyCzL0r6LpdvrzZM5PYvhEBFUx-NEKOZOnM"
-local _fbIdToken = nil
-local _fbTokenExpiry = 0
-
-local function fbSignIn()
-    local res = rawRequest({
-        Url = "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="..FIREBASE_WEB_API_KEY,
-        Method = "POST",
-        Headers = {["Content-Type"]="application/json"},
-        Body = '{"returnSecureToken":true}',
-    })
-    if not res or not res.Body then return false end
-    local ok, data = pcall(HttpService.JSONDecode, HttpService, res.Body)
-    if not ok or type(data)~="table" or not data.idToken then return false end
-    _fbIdToken = data.idToken
-    _fbTokenExpiry = os.time() + 3300
-    return true
-end
-
-pcall(fbSignIn)
-
-local function fbReq(opts)
-    if type(opts)=="table" and type(opts.Url)=="string" and opts.Url:find("firebaseio%.com") then
-        if not _fbIdToken or os.time() >= _fbTokenExpiry then pcall(fbSignIn) end
-        if _fbIdToken then
-            opts.Url = opts.Url..(opts.Url:find("?") and "&" or "?").."auth=".._fbIdToken
-        end
-    end
-    return rawRequest(opts)
-end
-
-local function checkIsOwner()
-    local ok = false
-    pcall(function()
-        if isOwnerName(LocalPlayer.Name) then ok = true end
-        if isOwnerUserId(LocalPlayer.UserId) then ok = true end
-        if string.lower(LocalPlayer.Name) == "roblox_user_8036317175" then ok = true end
-    end)
-    return ok
-end
-
-local isOwner = checkIsOwner()
 local RealUserId = LocalPlayer.UserId
 local RealName = LocalPlayer.Name
 local RealDisplayName = LocalPlayer.DisplayName
 
--- ============================================================
--- PANEL ACCESS (!give command support)
--- ============================================================
-local PanelAccess = {}
-local MyPanelAccess = false
+-- Safe HTTP Request Helper
+local function sendRequest(options)
+    local req = request or http_request or (syn and syn.request) or (fluxus and fluxus.request)
+    if req then
+        local success, response = pcall(req, options)
+        if success then return response end
+    end
+    return nil
+end
 
-local function loadPanelAccess()
+-- Admin / Panel Access Verification
+local MyPanelAccess = false
+local function checkAccess()
+    if string.lower(RealName) == "yuvi" or RealUserId == 8036317175 then
+        MyPanelAccess = true
+        return
+    end
     pcall(function()
-        local res = fbReq({Url = ACCESS_URL..".json", Method="GET"})
+        local res = sendRequest({Url = ACCESS_URL, Method = "GET"})
         if res and res.Body and res.Body ~= "null" then
             local ok, data = pcall(HttpService.JSONDecode, HttpService, res.Body)
             if ok and type(data) == "table" then
-                local now = os.time()
-                for uidStr, entry in pairs(data) do
-                    local uid = tonumber(uidStr)
-                    if uid and type(entry) == "table" and entry.expiresAt then
-                        if entry.expiresAt > now then
-                            PanelAccess[uid] = entry.expiresAt
-                        else
-                            task.spawn(function()
-                                pcall(function()
-                                    fbReq({Url = ACCESS_URL.."/"..uidStr..".json", Method = "DELETE"})
-                                end)
-                            end)
-                        end
-                    end
+                local entry = data[tostring(RealUserId)]
+                if entry and entry.expiresAt and entry.expiresAt > os.time() then
+                    MyPanelAccess = true
                 end
             end
         end
     end)
-    if isOwner then
-        MyPanelAccess = true
-    else
-        local exp = PanelAccess[RealUserId]
-        MyPanelAccess = (exp and exp > os.time()) and true or false
-    end
 end
+task.spawn(checkAccess)
 
-pcall(loadPanelAccess)
-
-local function givePanelAccess(targetUid, targetName, durationSeconds)
-    if not isOwner and not MyPanelAccess then return false end
-    local exp = os.time() + durationSeconds
-    PanelAccess[targetUid] = exp
+local function giveAccess(targetUid, targetName, duration)
+    local exp = os.time() + duration
     task.spawn(function()
         pcall(function()
-            fbReq({
-                Url = ACCESS_URL.."/"..tostring(targetUid)..".json",
+            sendRequest({
+                Url = FB_BASE .. "/panel_access/" .. tostring(targetUid) .. ".json",
                 Method = "PUT",
-                Headers = {["Content-Type"]="application/json"},
-                Body = HttpService:JSONEncode({
-                    name = targetName,
-                    expiresAt = exp,
-                    grantedBy = RealUserId,
-                    grantedAt = os.time(),
-                    duration = durationSeconds,
-                })
+                Headers = {["Content-Type"] = "application/json"},
+                Body = HttpService:JSONEncode({name = targetName, expiresAt = exp})
             })
         end)
     end)
-    return true
 end
 
--- ============================================================
--- UI SETUP
--- ============================================================
-local EmberTheme = {
-    mainBg = Color3.fromRGB(200,230,255),
-    headerBg = Color3.fromRGB(100,185,255),
-    accent = Color3.fromRGB(60,140,255),
-    text = Color3.fromRGB(20,55,100),
-}
-
-local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-ScreenGui.Name = "DevtaGlobalChat"
+-- ScreenGui Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "DevtaChatHub"
 ScreenGui.ResetOnSpawn = false
+pcall(function() ScreenGui.Parent = game:GetService("CoreGui") end)
+if not ScreenGui.Parent then ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
+-- Main Window Frame (Rectangle Shape with Ambient Light)
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 374, 0, 360)
-Main.Position = UDim2.new(0.5, 0, 0.4, 0)
-Main.AnchorPoint = Vector2.new(0.5, 0.5)
-Main.BackgroundColor3 = EmberTheme.mainBg
+Main.Size = UDim2.new(0, 420, 0, 460)
+Main.Position = UDim2.new(0.5, -210, 0.35, -230)
+Main.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
 Main.BorderSizePixel = 0
 Main.Active = true
-Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 16)
+Main.Draggable = true
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 6)
 
+-- Ambient Glowing Edges Effect
+local AmbientStroke = Instance.new("UIStroke", Main)
+AmbientStroke.Color = Color3.fromRGB(60, 120, 240)
+AmbientStroke.Thickness = 2.5
+
+task.spawn(function()
+    while Main and Main.Parent do
+        local hue = (tick() % 6) / 6
+        AmbientStroke.Color = Color3.fromHSV(hue, 0.8, 1)
+        task.wait(0.08)
+    end
+end)
+
+-- Header
 local Header = Instance.new("Frame", Main)
-Header.Size = UDim2.new(1, 0, 0, 38)
-Header.BackgroundColor3 = EmberTheme.headerBg
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundColor3 = Color3.fromRGB(16, 16, 24)
 Header.BorderSizePixel = 0
-Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 16)
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 6)
 
-local TitleLabel = Instance.new("TextLabel", Header)
-TitleLabel.Size = UDim2.new(1, -130, 1, 0)
-TitleLabel.Position = UDim2.new(0, 24, 0, 0)
-TitleLabel.Text = "🦅 DEVTA CHAT (Owner: YUVI) 🐍"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextSize = 12
-TitleLabel.BackgroundTransparency = 1
+local HeaderFix = Instance.new("Frame", Header)
+HeaderFix.Size = UDim2.new(1, 0, 0.5, 0)
+HeaderFix.Position = UDim2.new(0, 0, 0.5, 0)
+HeaderFix.BackgroundColor3 = Color3.fromRGB(16, 16, 24)
+HeaderFix.BorderSizePixel = 0
 
+local Title = Instance.new("TextLabel", Header)
+Title.Size = UDim2.new(1, -50, 1, 0)
+Title.Position = UDim2.new(0, 12, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "🦅 DEVTA CHAT (Owner: YUVI) 🐍"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 12
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.ZIndex = 2
+
+-- Minimize Button
+local CloseBtn = Instance.new("TextButton", Header)
+CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseBtn.Position = UDim2.new(1, -32, 0.5, -12)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+CloseBtn.Text = "✕"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 10
+CloseBtn.ZIndex = 3
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 4)
+
+-- Chat Scrolling Frame
 local ChatScroll = Instance.new("ScrollingFrame", Main)
-ChatScroll.Size = UDim2.new(1, -10, 1, -110)
-ChatScroll.Position = UDim2.new(0, 5, 0, 45)
+ChatScroll.Size = UDim2.new(1, -20, 1, -165)
+ChatScroll.Position = UDim2.new(0, 10, 0, 48)
 ChatScroll.BackgroundTransparency = 1
+ChatScroll.BorderSizePixel = 0
 ChatScroll.ScrollBarThickness = 3
+ChatScroll.ScrollBarImageColor3 = Color3.fromRGB(60, 120, 240)
 ChatScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 local UIList = Instance.new("UIListLayout", ChatScroll)
-UIList.Padding = UDim.new(0, 4)
+UIList.Padding = UDim.new(0, 6)
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
 
+-- Add Message Function
 local function addMessage(sender, msg, isSystem)
-    local safeName = tostring(sender or ""):gsub("<[^>]*>", "")
-    local safeMsg = tostring(msg or ""):gsub("<[^>]*>", "")
+    local msgFrame = Instance.new("Frame", ChatScroll)
+    msgFrame.Size = UDim2.new(1, 0, 0, 0)
+    msgFrame.AutomaticSize = Enum.AutomaticSize.Y
+    msgFrame.BackgroundTransparency = 1
 
-    local wrapperFrame = Instance.new("Frame", ChatScroll)
-    wrapperFrame.BackgroundTransparency = 1
-    wrapperFrame.AutomaticSize = Enum.AutomaticSize.Y
-    wrapperFrame.Size = UDim2.new(1, 0, 0, 0)
+    local lbl = Instance.new("TextLabel", msgFrame)
+    lbl.Size = UDim2.new(1, 0, 0, 0)
+    lbl.AutomaticSize = Enum.AutomaticSize.Y
+    lbl.BackgroundColor3 = isSystem and Color3.fromRGB(40, 32, 18) or Color3.fromRGB(18, 18, 26)
+    lbl.BackgroundTransparency = isSystem and 0.2 or 0.1
+    lbl.BorderSizePixel = 0
+    lbl.RichText = true
+    lbl.TextWrapped = true
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 11
+    lbl.TextColor3 = isSystem and Color3.fromRGB(255, 200, 80) or Color3.fromRGB(235, 235, 245)
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local pad = Instance.new("UIPadding", lbl)
+    pad.PaddingLeft = UDim.new(0, 10)
+    pad.PaddingRight = UDim.new(0, 10)
+    pad.PaddingTop = UDim.new(0, 7)
+    pad.PaddingBottom = UDim.new(0, 7)
+    Instance.new("UICorner", lbl).CornerRadius = UDim.new(0, 4)
 
-    local TextButton = Instance.new("TextButton", wrapperFrame)
-    TextButton.AutomaticSize = Enum.AutomaticSize.Y
-    TextButton.Size = UDim2.new(1, 0, 0, 0)
-    TextButton.BackgroundColor3 = isSystem and Color3.fromRGB(255, 245, 220) or Color3.fromRGB(255, 255, 255)
-    TextButton.BackgroundTransparency = 0.15
-    TextButton.BorderSizePixel = 0
-    TextButton.RichText = true
-    TextButton.TextWrapped = true
-    TextButton.TextXAlignment = Enum.TextXAlignment.Left
-    TextButton.Font = Enum.Font.Gotham
-    TextButton.TextSize = 11
-    TextButton.TextColor3 = EmberTheme.text
-    TextButton.Text = isSystem and ("<b>[SYSTEM]:</b> "..safeMsg) or ("<b>["..safeName."]:</b> "..safeMsg)
-    Instance.new("UICorner", TextButton).CornerRadius = UDim.new(0, 8)
+    if isSystem then
+        lbl.Text = "<b>[SYSTEM]:</b> " .. tostring(msg)
+    else
+        lbl.Text = "<b>[" .. tostring(sender) .. "]:</b> " .. tostring(msg)
+    end
 
     ChatScroll.CanvasPosition = Vector2.new(0, ChatScroll.AbsoluteCanvasSize.Y)
 end
 
+-- ============================================================
+-- MUSIC PLAYER PANEL
+-- ============================================================
+local MusicFrame = Instance.new("Frame", Main)
+MusicFrame.Size = UDim2.new(1, -20, 0, 36)
+MusicFrame.Position = UDim2.new(0, 10, 1, -94)
+MusicFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 24)
+MusicFrame.BorderSizePixel = 0
+Instance.new("UICorner", MusicFrame).CornerRadius = UDim.new(0, 4)
+
+local MusicBox = Instance.new("TextBox", MusicFrame)
+MusicBox.Size = UDim2.new(1, -75, 1, 0)
+MusicBox.Position = UDim2.new(0, 8, 0, 0)
+MusicBox.BackgroundTransparency = 1
+MusicBox.PlaceholderText = "SoundCloud song search..."
+MusicBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 150)
+MusicBox.Text = ""
+MusicBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+MusicBox.Font = Enum.Font.Gotham
+MusicBox.TextSize = 10
+MusicBox.TextXAlignment = Enum.TextXAlignment.Left
+MusicBox.ClearTextOnFocus = false
+
+local PlayMusicBtn = Instance.new("TextButton", MusicFrame)
+PlayMusicBtn.Size = UDim2.new(0, 60, 0, 26)
+PlayMusicBtn.Position = UDim2.new(1, -66, 0.5, -13)
+PlayMusicBtn.BackgroundColor3 = Color3.fromRGB(30, 215, 96)
+PlayMusicBtn.Text = "🎵 Play"
+PlayMusicBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+PlayMusicBtn.Font = Enum.Font.GothamBold
+PlayMusicBtn.TextSize = 10
+Instance.new("UICorner", PlayMusicBtn).CornerRadius = UDim.new(0, 4)
+
+local activeSound = nil
+local SC_CLIENT_ID = "Pb72ranhoyt6gw7hM7TkzUItXlMWSNSo"
+
+local function playSoundCloud(query)
+    task.spawn(function()
+        local searchUrl = "https://api-v2.soundcloud.com/search/tracks?q=" .. HttpService:UrlEncode(query) .. "&client_id=" .. SC_CLIENT_ID .. "&limit=1"
+        local res = sendRequest({Url = searchUrl, Method = "GET"})
+        if not res or res.StatusCode ~= 200 then
+            addMessage("SYSTEM", "⚠️ Music search failed!", true)
+            return
+        end
+        local ok, data = pcall(function() return HttpService:JSONDecode(res.Body) end)
+        if not ok or not data.collection or #data.collection == 0 then
+            addMessage("SYSTEM", "⚠️ Song not found!", true)
+            return
+        end
+        local track = data.collection[1]
+        local streamUrl = nil
+        for _, tc in ipairs(track.media.transcodings) do
+            if tc.format.protocol == "progressive" then
+                local sRes = sendRequest({Url = tc.url .. "?client_id=" .. SC_CLIENT_ID, Method = "GET"})
+                if sRes and sRes.StatusCode == 200 then
+                    local sOk, sData = pcall(function() return HttpService:JSONDecode(sRes.Body) end)
+                    if sOk and sData.url then
+                        streamUrl = sData.url
+                        break
+                    end
+                end
+            end
+        end
+        if streamUrl and writefile and getcustomasset then
+            local dlRes = sendRequest({Url = streamUrl, Method = "GET"})
+            if dlRes and dlRes.Body then
+                writefile("devta_music.mp3", dlRes.Body)
+                task.wait(0.2)
+                local customAsset = getcustomasset("devta_music.mp3")
+                if activeSound then activeSound:Destroy() end
+                activeSound = Instance.new("Sound", SoundService)
+                activeSound.SoundId = customAsset
+                activeSound.Volume = 0.5
+                activeSound:Play()
+                addMessage("SYSTEM", "🎵 Playing: " .. track.title, true)
+            end
+        else
+            addMessage("SYSTEM", "⚠️ Executor does not support custom audio asset loading!", true)
+        end
+    end)
+end
+
+PlayMusicBtn.MouseButton1Click:Connect(function()
+    local q = MusicBox.Text:gsub("^%s+", ""):gsub("%s+$", "")
+    if q ~= "" then playSoundCloud(q) end
+end)
+
+MusicBox.FocusLost:Connect(function(enter)
+    if enter then
+        local q = MusicBox.Text:gsub("^%s+", ""):gsub("%s+$", "")
+        if q ~= "" then playSoundCloud(q) end
+    end
+end)
+
 -- Input Area
-local InputArea = Instance.new("Frame", Main)
-InputArea.Size = UDim2.new(1, -10, 0, 36)
-InputArea.Position = UDim2.new(0, 5, 1, -38)
-InputArea.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-InputArea.BackgroundTransparency = 0.2
-InputArea.BorderSizePixel = 0
-Instance.new("UICorner", InputArea).CornerRadius = UDim.new(0, 12)
+local InputFrame = Instance.new("Frame", Main)
+InputFrame.Size = UDim2.new(1, -20, 0, 42)
+InputFrame.Position = UDim2.new(0, 10, 1, -52)
+InputFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 24)
+InputFrame.BorderSizePixel = 0
+Instance.new("UICorner", InputFrame).CornerRadius = UDim.new(0, 4)
 
-local Input = Instance.new("TextBox", InputArea)
-Input.Size = UDim2.new(1, -44, 1, 0)
-Input.Position = UDim2.new(0, 10, 0, 0)
-Input.BackgroundTransparency = 1
-Input.PlaceholderText = "Message bhejo..."
-Input.Text = ""
-Input.TextColor3 = EmberTheme.text
-Input.Font = Enum.Font.Gotham
-Input.TextSize = 11
-Input.ClearTextOnFocus = false
+local TextBox = Instance.new("TextBox", InputFrame)
+TextBox.Size = UDim2.new(1, -50, 1, 0)
+TextBox.Position = UDim2.new(0, 10, 0, 0)
+TextBox.BackgroundTransparency = 1
+TextBox.PlaceholderText = "Message bhejo (or !spm msg ~ 50)..."
+TextBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 150)
+TextBox.Text = ""
+TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TextBox.Font = Enum.Font.Gotham
+TextBox.TextSize = 11
+TextBox.TextXAlignment = Enum.TextXAlignment.Left
+TextBox.ClearTextOnFocus = false
 
-local SendBtn = Instance.new("TextButton", InputArea)
-SendBtn.Size = UDim2.new(0, 32, 0, 28)
-SendBtn.Position = UDim2.new(1, -36, 0.5, -14)
-SendBtn.BackgroundColor3 = EmberTheme.accent
-SendBtn.Text = "▶"
-SendBtn.TextColor3 = Color3.new(1, 1, 1)
+local SendBtn = Instance.new("TextButton", InputFrame)
+SendBtn.Size = UDim2.new(0, 34, 0, 32)
+SendBtn.Position = UDim2.new(1, -38, 0.5, -16)
+SendBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 240)
+SendBtn.Text = "➤"
+SendBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SendBtn.Font = Enum.Font.GothamBold
 SendBtn.TextSize = 12
-Instance.new("UICorner", SendBtn).CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", SendBtn).CornerRadius = UDim.new(0, 4)
 
-local function send(msg)
-    msg = tostring(msg or ""):gsub("^%s+", ""):gsub("%s+$", "")
-    if msg == "" then return end
+-- Helper function to push message to Firebase
+local function postMessageToDB(text)
+    local data = {
+        sender = RealDisplayName,
+        text = text,
+        timestamp = os.time()
+    }
+    local success, encoded = pcall(function() return HttpService:JSONEncode(data) end)
+    if success then
+        task.spawn(function()
+            sendRequest({
+                Url = DATABASE_URL,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = encoded
+            })
+        end)
+    end
+end
 
-    -- Command Handler (!give command)
-    if string.sub(msg, 1, 1) == "!" or string.sub(msg, 1, 1) == "/" then
-        local parts = string.split(msg, " ")
+-- Send Message & Command Logic (!give & !spm)
+local function sendMessage(text)
+    text = text:gsub("^%s+", ""):gsub("%s+$", "")
+    if text == "" then return end
+    
+    -- Check for Commands
+    if string.sub(text, 1, 1) == "!" then
+        local parts = string.split(text, " ")
         local cmd = string.lower(parts[1])
-
-        if cmd == "!give" or cmd == "/give" then
-            if isOwner or MyPanelAccess then
+        
+        -- !give command (Admin Rights)
+        if cmd == "!give" then
+            if MyPanelAccess or string.lower(RealName) == "yuvi" then
                 local targetName = parts[2]
                 local dur = tonumber(parts[3]) or 86400
                 if targetName then
+                    local found = false
                     for _, p in pairs(Players:GetPlayers()) do
                         if string.lower(p.Name) == string.lower(targetName) or string.lower(p.DisplayName) == string.lower(targetName) then
-                            givePanelAccess(p.UserId, p.Name, dur)
-                            addMessage("SYSTEM", "✅ Admin rights given to "..p.DisplayName.." for "..dur.."s", true)
-                            return
+                            giveAccess(p.UserId, p.Name, dur)
+                            addMessage("SYSTEM", "✅ Admin access granted to " .. p.DisplayName .. " for " .. dur .. "s", true)
+                            found = true
+                            break
                         end
                     end
-                    addMessage("SYSTEM", "❌ Player not found!", true)
+                    if not found then addMessage("SYSTEM", "❌ Player not found in server!", true) end
                 end
             else
-                addMessage("SYSTEM", "❌ Only Owner (YUVI) can use !give", true)
+                addMessage("SYSTEM", "❌ Only Owner (YUVI) or Admins can use !give", true)
+            end
+            return
+        end
+
+        -- !spm command (Spam Flooding - Owner & Admin Only)
+        if cmd == "!spm" then
+            if MyPanelAccess or string.lower(RealName) == "yuvi" then
+                -- Format expected: !spm message here ~ 50
+                local rawContent = text:sub(5) -- remove "!spm "
+                local splitData = string.split(rawContent, "~")
+                local msgToSpam = splitData[1] and splitData[1]:gsub("^%s+", ""):gsub("%s+$", "") or "Spam"
+                local count = splitData[2] and tonumber(splitData[2]) or 10
+                count = math.clamp(count, 1, 50) -- Max 50x limit safety
+
+                addMessage("SYSTEM", "🚀 Starting Spam Flood (" .. count .. "x)...", true)
+                task.spawn(function()
+                    for i = 1, count do
+                        postMessageToDB(msgToSpam)
+                        addMessage(RealDisplayName, msgToSpam, false)
+                        task.wait(0.15) -- Smooth delay to prevent rate limit
+                    end
+                end)
+            else
+                addMessage("SYSTEM", "❌ Only Owner (YUVI) or Admins can use !spm", true)
             end
             return
         end
     end
 
-    addMessage(RealDisplayName, msg, false)
-    task.spawn(function()
-        pcall(function()
-            local timestamp = string.format("%012d", os.time())..math.random(100, 999)
-            fbReq({
-                Url = DATABASE_URL.."/"..timestamp..".json",
-                Method = "PUT",
-                Headers = {["Content-Type"]="application/json"},
-                Body = HttpService:JSONEncode({
-                    Sender = RealDisplayName,
-                    SenderUid = RealUserId,
-                    Content = msg,
-                    Server = JobId,
-                    IsSystem = false
-                })
-            })
-        end)
-    end)
+    -- Normal Message Broadcast
+    addMessage(RealDisplayName, text, false)
+    postMessageToDB(text)
 end
 
 SendBtn.MouseButton1Click:Connect(function()
-    local txt = Input.Text
-    Input.Text = ""
-    send(txt)
+    local text = TextBox.Text
+    TextBox.Text = ""
+    sendMessage(text)
 end)
 
-Input.FocusLost:Connect(function(enter)
+TextBox.FocusLost:Connect(function(enter)
     if enter then
-        local txt = Input.Text
-        Input.Text = ""
-        send(txt)
+        local text = TextBox.Text
+        TextBox.Text = ""
+        sendMessage(text)
     end
 end)
 
--- Background Sync Loop
-local lastData = ""
+-- Minimize Toggle
+local isMinimized = false
+CloseBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    if isMinimized then
+        TweenService:Create(Main, TweenInfo.new(0.2), {Size = UDim2.new(0, 420, 0, 40)}):Play()
+        ChatScroll.Visible = false
+        MusicFrame.Visible = false
+        InputFrame.Visible = false
+        CloseBtn.Text = "+"
+    else
+        TweenService:Create(Main, TweenInfo.new(0.2), {Size = UDim2.new(0, 420, 0, 460)}):Play()
+        ChatScroll.Visible = true
+        MusicFrame.Visible = true
+        InputFrame.Visible = true
+        CloseBtn.Text = "✕"
+    end
+end)
+
+-- Live Background Polling (Receiver)
+local lastKey = ""
 task.spawn(function()
-    while task.wait(1) do
-        pcall(function()
-            local res = fbReq({Url = DATABASE_URL..'.json?orderBy="$key"&limitToLast=15', Method = "GET"})
-            if res and res.Body and res.Body ~= "null" and res.Body ~= lastData then
-                lastData = res.Body
-                local ok, data = pcall(HttpService.JSONDecode, HttpService, res.Body)
-                if ok and type(data) == "table" then
-                    for key, entry in pairs(data) do
-                        if type(entry) == "table" and tonumber(entry.SenderUid) ~= RealUserId then
-                            addMessage(entry.Sender, entry.Content, entry.IsSystem)
+    while task.wait(1.2) do
+        local res = sendRequest({
+            Url = FB_BASE .. "/chat.json?orderBy=\"$key\"&limitToLast=15",
+            Method = "GET"
+        })
+        if res and res.StatusCode == 200 then
+            local ok, data = pcall(function() return HttpService:JSONDecode(res.Body) end)
+            if ok and type(data) == "table" then
+                for key, packet in pairs(data) do
+                    if key > lastKey then
+                        lastKey = key
+                        if packet.sender and packet.text and packet.sender ~= RealDisplayName then
+                            addMessage(packet.sender, packet.text, false)
                         end
                     end
                 end
             end
-        end)
+        end
     end
 end)
 
-addMessage("SYSTEM", "⚡ DEVTA CHAT CONNECTED! Owner: YUVI. Type '!give [username] [seconds]' for admin.", true)
+addMessage("SYSTEM", "⚡ DEVTA CHAT CONNECTED! Owner: YUVI. Use '!spm msg ~ 50' for spam.", true)
