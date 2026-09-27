@@ -11,6 +11,7 @@ local UserInputService = game:GetService("UserInputService")
 local SoundService = game:GetService("SoundService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
 
 local Player = Players.LocalPlayer
 
@@ -46,7 +47,6 @@ local SUPER_ADMINS = {
 
 local TempAdmins = {}
 local active = false
-local spamSpeed = 0.8
 local patternStep = 1
 
 local function isAdmin(name)
@@ -58,10 +58,6 @@ end
 -- 50+ Objects / Roasts Bank
 local objects = {"Burger","Pizza","Qatar","Ethiopia","Fridge","Laptop","Toaster","Calculator","Socks","Blender","Microwave","Spoon","Table","Chair","Lamp","Charger","Battery","Mirror","Pencil","Notebook","Glue","Scissors","Ruler","Desk","Monitor","Keyboard","Mouse","Speaker","Remote","Wallet","Keys","Watch","Hat","Jacket","Backpack","Umbrella","Camera","Phone","Tablet","Console","Controller","Headset","Fan","Heater","Blanket","Pillow","Curtain","Rug","Clock"}
 
-local prefixes = {"///===///", "@", "+++---+++"}
-local selectedPrefix = prefixes[1]
-
--- Dynamic Wall Builder
 local function buildWall(msg)
     local patterns = {"#- #", "@", "*_*"} 
     local p = patterns[patternStep]
@@ -85,54 +81,44 @@ local function chat(msg)
 end
 
 --==================================================
--- COMMAND HANDLER (ADMINS & KICK / BAN / BRIG)
+-- SMART TARGET FINDER
 --==================================================
 local function findTarget(nameInput)
-    nameInput = nameInput:lower()
-    for _, p in pairs(Players:GetPlayers()) do
-        if p.Name:lower():sub(1, #nameInput) == nameInput or p.DisplayName:lower():sub(1, #nameInput) == nameInput then
-            return p
+    if nameInput and nameInput ~= "" then
+        nameInput = nameInput:lower():gsub("%s+", "")
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= Player then
+                local pName = p.Name:lower()
+                local dName = p.DisplayName:lower()
+                if pName:sub(1, #nameInput) == nameInput or dName:sub(1, #nameInput) == nameInput or pName:find(nameInput) or dName:find(nameInput) then
+                    return p
+                end
+            end
         end
     end
-    return nil
+    
+    local nearest = nil
+    local shortest = math.huge
+    local myRoot = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= Player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            if myRoot then
+                local dist = (p.Character.HumanoidRootPart.Position - myRoot.Position).Magnitude
+                if dist < shortest then
+                    shortest = dist
+                    nearest = p
+                end
+            else
+                return p
+            end
+        end
+    end
+    return nearest
 end
 
-TextChatService.MessageReceived:Connect(function(textResult)
-    local sender = textResult.TextSource
-    if not sender then return end
-    local senderPlayer = Players:GetPlayerByUserId(sender.UserId)
-    if not senderPlayer or not isAdmin(senderPlayer.Name) then return end
-
-    local msg = textResult.Text:lower()
-    local args = msg:split(" ")
-    local cmd = args[1]
-    local arg2 = args[2]
-
-    if cmd == "!give" and arg2 then
-        local target = findTarget(arg2)
-        if target then
-            SUPER_ADMINS[target.Name] = true
-            chat("YUVI DEVTA: Admin Granted -> " + target.Name)
-        end
-    elseif cmd == "!kick" and arg2 then
-        local target = findTarget(arg2)
-        if target == Player then
-            Player:Kick("\n[ YUVI DEVTA KICKED U JH2 ]\nAdmin: " .. senderPlayer.Name)
-        end
-    elseif cmd == "!sit" then
-        if Player.Character and Player.Character:FindFirstChild("Humanoid") then
-            Player.Character.Humanoid.Sit = true
-        end
-    elseif cmd == "!rj" then
-        game:GetService("TeleportService"):Teleport(game.PlaceId, Player)
-    elseif cmd == "!stopall" then
-        active = false
-        chat("YUVI DEVTA: Emergency Stop Triggered!")
-    end
-end)
-
 --==================================================
--- MAIN GUI CREATION (KEY-FREE VIP HUB)
+-- MAIN GUI CREATION
 --==================================================
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "YuviDevtaUltimateHub"
@@ -143,8 +129,8 @@ local Blur = Instance.new("BlurEffect", Lighting)
 Blur.Size = 0
 
 local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 480, 0, 310)
-Main.Position = UDim2.new(0.5, -240, 0.5, -155)
+Main.Size = UDim2.new(0, 480, 0, 460)
+Main.Position = UDim2.new(0.5, -240, 0.5, -230)
 Main.BackgroundColor3 = Color3.fromRGB(12, 10, 20)
 Main.BorderSizePixel = 0
 Main.Active = true
@@ -155,7 +141,6 @@ Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 16)
 local MainStroke = Instance.new("UIStroke", Main)
 MainStroke.Thickness = 2
 
--- Rainbow Border & Title Animation
 task.spawn(function()
     while MainStroke and MainStroke.Parent do
         local c = Color3.fromHSV(tick() % 5 / 5, 0.9, 1)
@@ -197,19 +182,18 @@ Content.Size = UDim2.new(1, 0, 1, -50)
 Content.Position = UDim2.new(0, 0, 0, 50)
 Content.BackgroundTransparency = 1
 
--- Target Input Boxes (4 Targets like Piyush/ATZ hub)
 local targets = {}
 for i = 1, 4 do
     local box = Instance.new("TextBox", Content)
-    box.Size = UDim2.new(0, 200, 0, 38)
-    box.Position = UDim2.new(0, 20 + ((i-1)%2)*215, 0, 10 + math.floor((i-1)/2)*48)
+    box.Size = UDim2.new(0, 200, 0, 35)
+    box.Position = UDim2.new(0, 20 + ((i-1)%2)*215, 0, 10 + math.floor((i-1)/2)*42)
     box.BackgroundColor3 = Color3.fromRGB(20, 15, 30)
-    box.PlaceholderText = "TARGET " .. i
+    box.PlaceholderText = "SPAM TARGET " .. i
     box.PlaceholderColor3 = Color3.fromRGB(120, 110, 140)
     box.Text = ""
     box.TextColor3 = Color3.fromRGB(255, 255, 255)
     box.Font = Enum.Font.GothamBold
-    box.TextSize = 13
+    box.TextSize = 12
     Instance.new("UICorner", box).CornerRadius = UDim.new(0, 8)
     local s = Instance.new("UIStroke", box)
     s.Color = Color3.fromRGB(80, 40, 120)
@@ -217,43 +201,84 @@ for i = 1, 4 do
     targets[i] = box
 end
 
--- Speed / Delay Box
 local SpeedBox = Instance.new("TextBox", Content)
-SpeedBox.Size = UDim2.new(0, 200, 0, 38)
-SpeedBox.Position = UDim2.new(0, 20, 0, 110)
+SpeedBox.Size = UDim2.new(0, 200, 0, 35)
+SpeedBox.Position = UDim2.new(0, 20, 0, 98)
 SpeedBox.BackgroundColor3 = Color3.fromRGB(20, 15, 30)
 SpeedBox.PlaceholderText = "Delay (sec): 0.8"
 SpeedBox.Text = "0.8"
 SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpeedBox.Font = Enum.Font.GothamBold
-SpeedBox.TextSize = 13
+SpeedBox.TextSize = 12
 Instance.new("UICorner", SpeedBox).CornerRadius = UDim.new(0, 8)
 
--- Start & Stop Buttons
 local Start = Instance.new("TextButton", Content)
-Start.Size = UDim2.new(0, 200, 0, 42)
-Start.Position = UDim2.new(0, 20, 0, 162)
+Start.Size = UDim2.new(0, 200, 0, 38)
+Start.Position = UDim2.new(0, 20, 0, 142)
 Start.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
 Start.Text = "▶ START SPAM"
 Start.TextColor3 = Color3.fromRGB(255, 255, 255)
 Start.Font = Enum.Font.GothamBold
-Start.TextSize = 14
+Start.TextSize = 13
 Instance.new("UICorner", Start).CornerRadius = UDim.new(0, 9)
 
 local Stop = Instance.new("TextButton", Content)
-Stop.Size = UDim2.new(0, 200, 0, 42)
-Stop.Position = UDim2.new(0, 235, 0, 162)
+Stop.Size = UDim2.new(0, 200, 0, 38)
+Stop.Position = UDim2.new(0, 235, 0, 142)
 Stop.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
 Stop.Text = "■ STOP"
 Stop.TextColor3 = Color3.fromRGB(255, 255, 255)
 Stop.Font = Enum.Font.GothamBold
-Stop.TextSize = 14
+Stop.TextSize = 13
 Instance.new("UICorner", Stop).CornerRadius = UDim.new(0, 9)
 
--- Status Footer
+local TrollBox = Instance.new("TextBox", Content)
+TrollBox.Size = UDim2.new(0, 200, 0, 35)
+TrollBox.Position = UDim2.new(0, 235, 0, 98)
+TrollBox.BackgroundColor3 = Color3.fromRGB(20, 15, 30)
+TrollBox.PlaceholderText = "Bang/FaceBang Target"
+TrollBox.Text = ""
+TrollBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+TrollBox.Font = Enum.Font.GothamBold
+TrollBox.TextSize = 12
+Instance.new("UICorner", TrollBox).CornerRadius = UDim.new(0, 8)
+local ts = Instance.new("UIStroke", TrollBox)
+ts.Color = Color3.fromRGB(120, 40, 40)
+ts.Thickness = 1.5
+
+local BangBtn = Instance.new("TextButton", Content)
+BangBtn.Size = UDim2.new(0, 200, 0, 38)
+BangBtn.Position = UDim2.new(0, 20, 0, 188)
+BangBtn.BackgroundColor3 = Color3.fromRGB(140, 30, 90)
+BangBtn.Text = "🔥 BANG TARGET"
+BangBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+BangBtn.Font = Enum.Font.GothamBold
+BangBtn.TextSize = 13
+Instance.new("UICorner", BangBtn).CornerRadius = UDim.new(0, 9)
+
+local FaceBangBtn = Instance.new("TextButton", Content)
+FaceBangBtn.Size = UDim2.new(0, 200, 0, 38)
+FaceBangBtn.Position = UDim2.new(0, 235, 0, 188)
+FaceBangBtn.BackgroundColor3 = Color3.fromRGB(190, 40, 60)
+FaceBangBtn.Text = "💀 FACE BANG TARGET"
+FaceBangBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+FaceBangBtn.Font = Enum.Font.GothamBold
+FaceBangBtn.TextSize = 13
+Instance.new("UICorner", FaceBangBtn).CornerRadius = UDim.new(0, 9)
+
+local AntiFlingBtn = Instance.new("TextButton", Content)
+AntiFlingBtn.Size = UDim2.new(0, 415, 0, 38)
+AntiFlingBtn.Position = UDim2.new(0, 20, 0, 235)
+AntiFlingBtn.BackgroundColor3 = Color3.fromRGB(60, 40, 120)
+AntiFlingBtn.Text = "🛡️ ANTI-FLING: OFF"
+AntiFlingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AntiFlingBtn.Font = Enum.Font.GothamBold
+AntiFlingBtn.TextSize = 13
+Instance.new("UICorner", AntiFlingBtn).CornerRadius = UDim.new(0, 9)
+
 local Status = Instance.new("TextLabel", Content)
 Status.Size = UDim2.new(1, -40, 0, 25)
-Status.Position = UDim2.new(0, 20, 0, 215)
+Status.Position = UDim2.new(0, 20, 0, 282)
 Status.BackgroundTransparency = 1
 Status.Text = "Status: Idle 💤"
 Status.TextColor3 = Color3.fromRGB(180, 180, 190)
@@ -261,7 +286,6 @@ Status.Font = Enum.Font.GothamBold
 Status.TextSize = 12
 Status.TextXAlignment = Enum.TextXAlignment.Left
 
--- Minimize Logic
 local minimized = false
 Minimize.MouseButton1Click:Connect(function()
     minimized = not minimized
@@ -272,13 +296,10 @@ Minimize.MouseButton1Click:Connect(function()
     else
         Minimize.Text = "—"
         Content.Visible = true
-        TweenService:Create(Main, TweenInfo.new(0.25), {Size = UDim2.new(0, 480, 0, 310)}):Play()
+        TweenService:Create(Main, TweenInfo.new(0.25), {Size = UDim2.new(0, 480, 0, 460)}):Play()
     end
 end)
 
---==================================================
--- SPAM EXECUTION ENGINE
---==================================================
 Start.MouseButton1Click:Connect(function()
     if active then return end
     active = true
@@ -312,6 +333,233 @@ Stop.MouseButton1Click:Connect(function()
     Status.Text = "Status: ⏹ Stopped."
     Status.TextColor3 = Color3.fromRGB(255, 100, 100)
     chat("|| YUVI DEVTA 👑🐍🦅 || STOPPED 🛑")
+end)
+
+local bangActive = false
+local faceBangActive = false
+local currentAnimTrack = nil
+
+local function isR15(character)
+    return character:FindFirstChild("UpperTorso") ~= nil
+end
+
+-- Normal Bang
+BangBtn.MouseButton1Click:Connect(function()
+    if faceBangActive then return end
+    bangActive = not bangActive
+
+    if bangActive then
+        local targetPlayer = findTarget(TrollBox.Text)
+        if not targetPlayer then
+            bangActive = false
+            Status.Text = "Status: ❌ No Target Found!"
+            return
+        end
+
+        Status.Text = "Status: 🔥 Banging " .. targetPlayer.Name
+        Status.TextColor3 = Color3.fromRGB(255, 0, 150)
+
+        task.spawn(function()
+            local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
+            if not humanoid then return end
+
+            pcall(function()
+                if humanoid.Parent:FindFirstChild("Pants") then humanoid.Parent.Pants:Destroy() end
+                if humanoid.Parent:FindFirstChild("Shirt") then humanoid.Parent.Shirt:Destroy() end
+            end)
+
+            local animId = isR15(Player.Character) and 'rbxassetid://5918726674' or 'rbxassetid://148840371'
+            local anim = Instance.new('Animation')
+            anim.AnimationId = animId
+            currentAnimTrack = humanoid:LoadAnimation(anim)
+            currentAnimTrack:Play()
+            currentAnimTrack:AdjustSpeed(5)
+
+            while bangActive do
+                RunService.RenderStepped:Wait()
+                local liveTarget = findTarget(TrollBox.Text) or targetPlayer
+                if liveTarget and liveTarget.Character and liveTarget.Character:FindFirstChild("HumanoidRootPart") and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+                    local targetRoot = liveTarget.Character.HumanoidRootPart
+                    Player.Character.HumanoidRootPart.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 1.1)
+                end
+            end
+
+            if currentAnimTrack then currentAnimTrack:Stop() end
+        end)
+    else
+        bangActive = false
+        if currentAnimTrack then currentAnimTrack:Stop() end
+        Status.Text = "Status: Idle 💤"
+        Status.TextColor3 = Color3.fromRGB(180, 180, 190)
+    end
+end)
+
+-- FACE BANG FIXED (Ab stomach/pelvis area target ke face par exact hit karega)
+FaceBangBtn.MouseButton1Click:Connect(function()
+    if bangActive then return end
+    faceBangActive = not faceBangActive
+
+    if faceBangActive then
+        local targetPlayer = findTarget(TrollBox.Text)
+        if not targetPlayer then
+            faceBangActive = false
+            Status.Text = "Status: ❌ No Target Found!"
+            return
+        end
+
+        Status.Text = "Status: 💀 Face Banging " .. targetPlayer.Name
+        Status.TextColor3 = Color3.fromRGB(255, 50, 50)
+
+        task.spawn(function()
+            local humanoid = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
+            if not humanoid then return end
+
+            local animId = isR15(Player.Character) and "rbxassetid://5918726674" or "rbxassetid://148840371"
+            local anim = Instance.new("Animation")
+            anim.AnimationId = animId
+            currentAnimTrack = humanoid:LoadAnimation(anim)
+            currentAnimTrack:Play(0.1, 1, 1)
+            currentAnimTrack:AdjustSpeed(5)
+
+            while faceBangActive do
+                RunService.RenderStepped:Wait()
+                local liveTarget = findTarget(TrollBox.Text) or targetPlayer
+                if liveTarget and liveTarget.Character and liveTarget.Character:FindFirstChild("HumanoidRootPart") and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+                    local targetRoot = liveTarget.Character:FindFirstChild("HumanoidRootPart") or liveTarget.Character:FindFirstChild("Torso")
+                    local speakerRoot = Player.Character:FindFirstChild("HumanoidRootPart")
+
+                    if targetRoot and speakerRoot then
+                        -- Face Bang Height & Position Fix: Y ko +1.2 upar utha diya hai taaki stomach target ke face ke level par ho, aur distance close rakhi hai (-0.7)
+                        speakerRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 1.2, -0.7) * CFrame.Angles(0, math.pi, 0)
+                        speakerRoot.AssemblyLinearVelocity = Vector3.zero
+                    end
+                end
+            end
+
+            if currentAnimTrack then currentAnimTrack:Stop() end
+        end)
+    else
+        faceBangActive = false
+        if currentAnimTrack then currentAnimTrack:Stop() end
+        Status.Text = "Status: Idle 💤"
+        Status.TextColor3 = Color3.fromRGB(180, 180, 190)
+    end
+end)
+
+--==================================================
+-- ANTI-FLING ENGINE
+--==================================================
+local antiFlingActive = false
+local MAX_SPEED = 120
+local MAX_ANGULAR = 80
+local MAX_DISTANCE = 50
+local CHECK_INTERVAL = 0.05
+local RECOVERY_TIME = 0.40
+
+local safeCFrame
+local timer = 0
+local recoveryUntil = 0
+
+local function disableCollision(char)
+    for _, obj in ipairs(char:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            obj.CanCollide = false
+        end
+    end
+end
+
+local function watchCharacterCollision(char)
+    disableCollision(char)
+    char.DescendantAdded:Connect(function(obj)
+        if obj:IsA("BasePart") and antiFlingActive then
+            obj.CanCollide = false
+        end
+    end)
+end
+
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= Player and player.Character then
+        watchCharacterCollision(player.Character)
+    end
+    player.CharacterAdded:Connect(function(char)
+        if player ~= Player then
+            watchCharacterCollision(char)
+        end
+    end)
+end
+
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(char)
+        if player ~= Player and antiFlingActive then
+            watchCharacterCollision(char)
+        end
+    end)
+end)
+
+AntiFlingBtn.MouseButton1Click:Connect(function()
+    antiFlingActive = not antiFlingActive
+    if antiFlingActive then
+        AntiFlingBtn.Text = "🛡️ ANTI-FLING: ON"
+        AntiFlingBtn.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
+        
+        if Player.Character then
+            safeCFrame = Player.Character:FindFirstChild("HumanoidRootPart") and Player.Character.HumanoidRootPart.CFrame
+        end
+        
+        pcall(function()
+            local channels = TextChatService:WaitForChild("TextChannels")
+            local general = channels:FindFirstChild("RBXGeneral")
+            if general then
+                general:DisplaySystemMessage("🦅🐍 YUVI ABBU ANTI-FLING ACTIVATED")
+            end
+        end)
+    else
+        AntiFlingBtn.Text = "🛡️ ANTI-FLING: OFF"
+        AntiFlingBtn.BackgroundColor3 = Color3.fromRGB(60, 40, 120)
+    end
+end)
+
+RunService.Heartbeat:Connect(function(dt)
+    if not antiFlingActive then return end
+    local char = Player.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    local root = char:FindFirstChild("HumanoidRootPart")
+    
+    if not hum or hum.Health <= 0 or not root then return end
+
+    timer += dt
+    if timer < CHECK_INTERVAL then return end
+    timer = 0
+
+    local now = os.clock()
+    local velocity = root.AssemblyLinearVelocity
+    local angular = root.AssemblyAngularVelocity
+    local speed = velocity.Magnitude
+    local spin = angular.Magnitude
+    local distance = safeCFrame and (root.Position - safeCFrame.Position).Magnitude or 0
+
+    local flingDetected = speed > MAX_SPEED or spin > MAX_ANGULAR or distance > MAX_DISTANCE
+
+    if flingDetected then
+        recoveryUntil = now + RECOVERY_TIME
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+        if safeCFrame then root.CFrame = safeCFrame end
+        hum:Move(Vector3.zero, false)
+        pcall(function()
+            hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+            hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+            hum:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
+            hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+        end)
+    elseif now < recoveryUntil then
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+        hum:Move(Vector3.zero, false)
+    else
+        safeCFrame = root.CFrame
+    end
 end)
 
 chat("|| YUVI DEVTA 👑🐍🦅 || READY TO RULE")
