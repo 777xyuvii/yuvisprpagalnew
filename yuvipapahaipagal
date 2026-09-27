@@ -1,36 +1,65 @@
 --[[
-	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+    ==================================================
+        🦇 YUVI DEVTA 👑🐍🦅 //
+    ==================================================
 ]]
+
 local Players = game:GetService("Players")
 local TextChatService = game:GetService("TextChatService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local SoundService = game:GetService("SoundService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TeleportService = game:GetService("TeleportService")
+local Lighting = game:GetService("Lighting")
 
 local Player = Players.LocalPlayer
-local PlayerGui = Player:WaitForChild("PlayerGui")
+
+local PlayerGui = nil
+if gethui then
+    PlayerGui = gethui()
+elseif syn and syn.protect_gui then
+    local pScreen = Instance.new("ScreenGui")
+    syn.protect_gui(pScreen)
+    pScreen.Parent = game:GetService("CoreGui")
+    PlayerGui = pScreen
+else
+    PlayerGui = Player:WaitForChild("PlayerGui")
+end
+
+-- Cleanup Old GUI
+pcall(function()
+    if PlayerGui:FindFirstChild("YuviDevtaUltimateHub") then
+        PlayerGui["YuviDevtaUltimateHub"]:Destroy()
+    end
+end)
 
 --==================================================
--- ADMIN & CONFIG SETTINGS
+-- CONFIG & ADMIN SETTINGS
 --==================================================
-
-local ADMINS = {
-    ["roblox_user_8036317175"] = true,
-    ["sneaky_gmr"] = true,
+local SUPER_ADMINS = {
+    [Player.Name] = true,
     ["aaravgour1010"] = true,
+    ["sneaky_gmr"] = true,
     ["777xneoo"] = true,
-    ["777xzeus"] = true,
-    [Player.Name] = true
+    ["777xzeus"] = true
 }
 
+local TempAdmins = {}
 local active = false
+local spamSpeed = 0.8
 local patternStep = 1
-local spamSpeed = 1.3
 
--- 50+ Objects List
+local function isAdmin(name)
+    if SUPER_ADMINS[name] then return true end
+    if TempAdmins[name] and os.time() < TempAdmins[name] then return true end
+    return false
+end
+
+-- 50+ Objects / Roasts Bank
 local objects = {"Burger","Pizza","Qatar","Ethiopia","Fridge","Laptop","Toaster","Calculator","Socks","Blender","Microwave","Spoon","Table","Chair","Lamp","Charger","Battery","Mirror","Pencil","Notebook","Glue","Scissors","Ruler","Desk","Monitor","Keyboard","Mouse","Speaker","Remote","Wallet","Keys","Watch","Hat","Jacket","Backpack","Umbrella","Camera","Phone","Tablet","Console","Controller","Headset","Fan","Heater","Blanket","Pillow","Curtain","Rug","Clock"}
+
+local prefixes = {"///===///", "@", "+++---+++"}
+local selectedPrefix = prefixes[1]
 
 -- Dynamic Wall Builder
 local function buildWall(msg)
@@ -39,351 +68,10 @@ local function buildWall(msg)
     local currentText = " " .. msg
     local remainingSpace = 195 - #currentText
     local repeatCount = math.floor(remainingSpace / #p)
-    
     local wall = string.rep(p, repeatCount) .. currentText
     patternStep = (patternStep >= 3) and 1 or (patternStep + 1)
     return wall
 end
-
---==================================================
--- LOADING SCREEN (YUVI DEVTA BRANDED)
---==================================================
-
-local LoadingGui = Instance.new("ScreenGui")
-LoadingGui.Name = "YUVI DEVTA LOADING"
-LoadingGui.ResetOnSpawn = false
-LoadingGui.Parent = PlayerGui
-
-local LoadingMain = Instance.new("Frame")
-LoadingMain.Size = UDim2.new(0, 320, 0, 190)
-LoadingMain.Position = UDim2.new(0.5, -160, 0.5, -95)
-LoadingMain.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
-LoadingMain.BorderSizePixel = 0
-LoadingMain.Parent = LoadingGui
-
-local LoadingCorner = Instance.new("UICorner")
-LoadingCorner.CornerRadius = UDim.new(0, 16)
-LoadingCorner.Parent = LoadingMain
-
-local LoadingStroke = Instance.new("UIStroke")
-LoadingStroke.Color = Color3.fromRGB(220, 30, 255)
-LoadingStroke.Thickness = 2
-LoadingStroke.Parent = LoadingMain
-
-local LoadingTitle = Instance.new("TextLabel")
-LoadingTitle.Size = UDim2.new(1, 0, 0, 45)
-LoadingTitle.Position = UDim2.new(0, 0, 0, 15)
-LoadingTitle.BackgroundTransparency = 1
-LoadingTitle.Text = "🦇 YUVI DEVTA 🦅🐍"
-LoadingTitle.TextSize = 22
-LoadingTitle.Font = Enum.Font.GothamBold
-LoadingTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-LoadingTitle.Parent = LoadingMain
-
-local LoadingSub = Instance.new("TextLabel")
-LoadingSub.Size = UDim2.new(1, 0, 0, 25)
-LoadingSub.Position = UDim2.new(0, 0, 0, 55)
-LoadingSub.BackgroundTransparency = 1
-LoadingSub.Text = "ULTIMATE GTV HUB"
-LoadingSub.TextSize = 14
-LoadingSub.Font = Enum.Font.GothamBold
-LoadingSub.TextColor3 = Color3.fromRGB(180, 180, 185)
-LoadingSub.Parent = LoadingMain
-
-local LoadingText = Instance.new("TextLabel")
-LoadingText.Size = UDim2.new(1, -30, 0, 25)
-LoadingText.Position = UDim2.new(0, 15, 0, 90)
-LoadingText.BackgroundTransparency = 1
-LoadingText.Text = "INITIALIZING..."
-LoadingText.TextSize = 13
-LoadingText.Font = Enum.Font.Gotham
-LoadingText.TextColor3 = Color3.fromRGB(220, 220, 220)
-LoadingText.Parent = LoadingMain
-
-local ProgressBack = Instance.new("Frame")
-ProgressBack.Size = UDim2.new(1, -40, 0, 10)
-ProgressBack.Position = UDim2.new(0, 20, 0, 125)
-ProgressBack.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-ProgressBack.BorderSizePixel = 0
-ProgressBack.Parent = LoadingMain
-
-local ProgressBackCorner = Instance.new("UICorner")
-ProgressBackCorner.CornerRadius = UDim.new(1, 0)
-ProgressBackCorner.Parent = ProgressBack
-
-local Progress = Instance.new("Frame")
-Progress.Size = UDim2.new(0, 0, 1, 0)
-Progress.BackgroundColor3 = Color3.fromRGB(220, 30, 255)
-Progress.BorderSizePixel = 0
-Progress.Parent = ProgressBack
-
-local ProgressCorner = Instance.new("UICorner")
-ProgressCorner.CornerRadius = UDim.new(1, 0)
-ProgressCorner.Parent = Progress
-
-local Percent = Instance.new("TextLabel")
-Percent.Size = UDim2.new(1, 0, 0, 25)
-Percent.Position = UDim2.new(0, 0, 0, 140)
-Percent.BackgroundTransparency = 1
-Percent.Text = "0%"
-Percent.TextSize = 13
-Percent.Font = Enum.Font.GothamBold
-Percent.TextColor3 = Color3.fromRGB(255, 255, 255)
-Percent.Parent = LoadingMain
-
-local LoadingMusic = Instance.new("Sound")
-LoadingMusic.Name = "YuviLoadingMusic"
-LoadingMusic.SoundId = "rbxassetid://71659730326072"
-LoadingMusic.Volume = 0.45
-LoadingMusic.Looped = true
-LoadingMusic.Parent = SoundService
-
-pcall(function()
-    LoadingMusic:Play()
-end)
-
-local LoadingTime = 8
-local StartTime = os.clock()
-
-while true do
-    local elapsed = os.clock() - StartTime
-    local progressAmount = math.clamp(elapsed / LoadingTime, 0, 1)
-
-    Progress.Size = UDim2.new(progressAmount, 0, 1, 0)
-
-    local percentValue = math.floor(progressAmount * 100)
-    Percent.Text = percentValue .. "%"
-
-    if percentValue < 25 then
-        LoadingText.Text = "INITIALIZING YUVI DEVTA..."
-    elseif percentValue < 50 then
-        LoadingText.Text = "LOADING MODULES..."
-    elseif percentValue < 75 then
-        LoadingText.Text = "PREPARING INTERFACE..."
-    elseif percentValue < 100 then
-        LoadingText.Text = "ALMOST READY..."
-    else
-        LoadingText.Text = "READY!"
-    end
-
-    if progressAmount >= 1 then
-        break
-    end
-
-    task.wait(0.03)
-end
-
-LoadingMusic:Stop()
-LoadingMusic:Destroy()
-
-local FadeInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-
-for _, obj in ipairs(LoadingMain:GetDescendants()) do
-    if obj:IsA("TextLabel") then
-        TweenService:Create(obj, FadeInfo, { TextTransparency = 1 }):Play()
-    elseif obj:IsA("Frame") then
-        TweenService:Create(obj, FadeInfo, { BackgroundTransparency = 1 }):Play()
-    elseif obj:IsA("UIStroke") then
-        TweenService:Create(obj, FadeInfo, { Transparency = 1 }):Play()
-    end
-end
-
-task.wait(0.45)
-LoadingGui:Destroy()
-
---==================================================
--- MAIN GUI
---==================================================
-
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "YuviHubGui"
-Gui.ResetOnSpawn = false
-Gui.Parent = PlayerGui
-
-local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 320, 0, 235)
-Main.Position = UDim2.new(0.5, -160, 0.5, -117)
-Main.BackgroundColor3 = Color3.fromRGB(12, 12, 18)
-Main.BorderSizePixel = 0
-Main.Parent = Gui
-
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 15)
-MainCorner.Parent = Main
-
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Thickness = 2
-MainStroke.Parent = Main
-
--- Rainbow Border Animation
-task.spawn(function()
-    while MainStroke and MainStroke.Parent do
-        MainStroke.Color = Color3.fromHSV(tick() % 5 / 5, 0.8, 1)
-        task.wait(0.05)
-    end
-end)
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -50, 0, 45)
-Title.Position = UDim2.new(0, 15, 0, 5)
-Title.BackgroundTransparency = 1
-Title.Text = "🦇 YUVI DEVTA 🦅🐍"
-Title.TextSize = 18
-Title.Font = Enum.Font.GothamBold
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Parent = Main
-
--- RGB Title Animation
-task.spawn(function()
-    while Title and Title.Parent do
-        local hue = tick() % 5 / 5
-        Title.TextColor3 = Color3.fromHSV(hue, 1, 1)
-        task.wait(0.05)
-    end
-end)
-
-local Minimize = Instance.new("TextButton")
-Minimize.Size = UDim2.new(0, 30, 0, 30)
-Minimize.Position = UDim2.new(1, -38, 0, 8)
-Minimize.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-Minimize.Text = "—"
-Minimize.TextSize = 18
-Minimize.Font = Enum.Font.GothamBold
-Minimize.TextColor3 = Color3.fromRGB(255, 255, 255)
-Minimize.Parent = Main
-
-local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(0, 8)
-MinCorner.Parent = Minimize
-
-local Content = Instance.new("Frame")
-Content.Size = UDim2.new(1, 0, 1, -50)
-Content.Position = UDim2.new(0, 0, 0, 50)
-Content.BackgroundTransparency = 1
-Content.Parent = Main
-
-local NameBox = Instance.new("TextBox")
-NameBox.Size = UDim2.new(1, -30, 0, 40)
-NameBox.Position = UDim2.new(0, 15, 0, 5)
-NameBox.BackgroundColor3 = Color3.fromRGB(18, 18, 25)
-NameBox.BorderSizePixel = 0
-NameBox.PlaceholderText = "ENTER TARGET NAME"
-NameBox.Text = "Roblox"
-NameBox.TextSize = 14
-NameBox.Font = Enum.Font.Gotham
-NameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-NameBox.PlaceholderColor3 = Color3.fromRGB(130, 130, 140)
-NameBox.Parent = Content
-
-local NameCorner = Instance.new("UICorner")
-NameCorner.CornerRadius = UDim.new(0, 9)
-NameCorner.Parent = NameBox
-
-local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(1, -30, 0, 25)
-Status.Position = UDim2.new(0, 15, 0, 52)
-Status.BackgroundTransparency = 1
-Status.Text = "● READY"
-Status.TextSize = 12
-Status.Font = Enum.Font.GothamBold
-Status.TextXAlignment = Enum.TextXAlignment.Left
-Status.TextColor3 = Color3.fromRGB(180, 180, 185)
-Status.Parent = Content
-
-local Start = Instance.new("TextButton")
-Start.Size = UDim2.new(0.5, -20, 0, 42)
-Start.Position = UDim2.new(0, 15, 0, 82)
-Start.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
-Start.BorderSizePixel = 0
-Start.Text = "▶ START"
-Start.TextSize = 14
-Start.Font = Enum.Font.GothamBold
-Start.TextColor3 = Color3.fromRGB(255, 255, 255)
-Start.Parent = Content
-
-local StartCorner = Instance.new("UICorner")
-StartCorner.CornerRadius = UDim.new(0, 9)
-StartCorner.Parent = Start
-
-local Stop = Instance.new("TextButton")
-Stop.Size = UDim2.new(0.5, -20, 0, 42)
-Stop.Position = UDim2.new(0.5, 5, 0, 82)
-Stop.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-Stop.BorderSizePixel = 0
-Stop.Text = "■ STOP"
-Stop.TextSize = 14
-Stop.Font = Enum.Font.GothamBold
-Stop.TextColor3 = Color3.fromRGB(255, 255, 255)
-Stop.Parent = Content
-
-local StopCorner = Instance.new("UICorner")
-StopCorner.CornerRadius = UDim.new(0, 9)
-StopCorner.Parent = Stop
-
---==================================================
--- DRAG LOGIC
---==================================================
-
-local dragging = false
-local dragStart
-local startPos
-
-Main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = Main.Position
-
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if not dragging then return end
-
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-        local delta = input.Position - dragStart
-        Main.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
-end)
-
---==================================================
--- MINIMIZE LOGIC
---==================================================
-
-local minimized = false
-
-Minimize.MouseButton1Click:Connect(function()
-    minimized = not minimized
-
-    if minimized then
-        Minimize.Text = "+"
-        Content.Visible = false
-        TweenService:Create(Main, TweenInfo.new(0.25), {
-            Size = UDim2.new(0, 200, 0, 55)
-        }):Play()
-    else
-        Minimize.Text = "—"
-        Content.Visible = true
-        TweenService:Create(Main, TweenInfo.new(0.25), {
-            Size = UDim2.new(0, 320, 0, 235)
-        }):Play()
-    end
-end)
-
---==================================================
--- CHAT SENDER ENGINE
---==================================================
 
 local function chat(msg)
     task.spawn(function()
@@ -397,101 +85,233 @@ local function chat(msg)
 end
 
 --==================================================
--- COMMAND HANDLER (ADMINS & GIVE / SAY / SIT / RJ)
+-- COMMAND HANDLER (ADMINS & KICK / BAN / BRIG)
 --==================================================
-
-local function handleCmd(text, sender)
-    local split = text:lower():split(" ")
-    local cmd = split[1]
-    local arg = split[2]
-    
-    if cmd == "!give" and arg then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p.Name:lower():find(arg) then 
-                ADMINS[p.Name] = true
-                chat("YUVI DEVTA: Admin Added -> " .. p.Name) 
-            end
+local function findTarget(nameInput)
+    nameInput = nameInput:lower()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p.Name:lower():sub(1, #nameInput) == nameInput or p.DisplayName:lower():sub(1, #nameInput) == nameInput then
+            return p
         end
-    elseif cmd == "!start" then
-        active = true
-        Status.Text = "● RUNNING"
-        Start.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
-        Stop.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-        chat("YUVI DEVTA: Spammer Started by " .. sender.Name)
-    elseif cmd == "!stop" then
-        active = false
-        Status.Text = "● STOPPED"
-        Start.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
-        Stop.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
-        chat("YUVI DEVTA: Spammer Stopped by " .. sender.Name)
-    elseif cmd == "!sit" then
-        if Player.Character and Player.Character:FindFirstChild("Humanoid") then 
-            Player.Character.Humanoid.Sit = true 
-        end
-    elseif cmd == "!say" and arg then
-        chat(text:sub(6))
-    elseif cmd == "!rj" then
-        TeleportService:Teleport(game.PlaceId, Player)
-    elseif cmd == "!cmds" then
-        chat("Cmds: !give [user], !start, !stop, !sit, !say [msg], !rj")
     end
+    return nil
 end
 
-for _, p in pairs(Players:GetPlayers()) do 
-    p.Chatted:Connect(function(m) 
-        if ADMINS[p.Name] or ADMINS[p.Name:lower()] then handleCmd(m, p) end 
-    end) 
-end
-Players.PlayerAdded:Connect(function(p) 
-    p.Chatted:Connect(function(m) 
-        if ADMINS[p.Name] or ADMINS[p.Name:lower()] then handleCmd(m, p) end 
-    end) 
+TextChatService.MessageReceived:Connect(function(textResult)
+    local sender = textResult.TextSource
+    if not sender then return end
+    local senderPlayer = Players:GetPlayerByUserId(sender.UserId)
+    if not senderPlayer or not isAdmin(senderPlayer.Name) then return end
+
+    local msg = textResult.Text:lower()
+    local args = msg:split(" ")
+    local cmd = args[1]
+    local arg2 = args[2]
+
+    if cmd == "!give" and arg2 then
+        local target = findTarget(arg2)
+        if target then
+            SUPER_ADMINS[target.Name] = true
+            chat("YUVI DEVTA: Admin Granted -> " + target.Name)
+        end
+    elseif cmd == "!kick" and arg2 then
+        local target = findTarget(arg2)
+        if target == Player then
+            Player:Kick("\n[ YUVI DEVTA KICKED U JH2 ]\nAdmin: " .. senderPlayer.Name)
+        end
+    elseif cmd == "!sit" then
+        if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+            Player.Character.Humanoid.Sit = true
+        end
+    elseif cmd == "!rj" then
+        game:GetService("TeleportService"):Teleport(game.PlaceId, Player)
+    elseif cmd == "!stopall" then
+        active = false
+        chat("YUVI DEVTA: Emergency Stop Triggered!")
+    end
 end)
 
 --==================================================
--- SPAM LOOP (WITH DYNAMIC WALLS & RANDOM OBJECTS)
+-- MAIN GUI CREATION (KEY-FREE VIP HUB)
 --==================================================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "YuviDevtaUltimateHub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+local Blur = Instance.new("BlurEffect", Lighting)
+Blur.Size = 0
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 480, 0, 310)
+Main.Position = UDim2.new(0.5, -240, 0.5, -155)
+Main.BackgroundColor3 = Color3.fromRGB(12, 10, 20)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+Main.Parent = ScreenGui
+
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 16)
+local MainStroke = Instance.new("UIStroke", Main)
+MainStroke.Thickness = 2
+
+-- Rainbow Border & Title Animation
+task.spawn(function()
+    while MainStroke and MainStroke.Parent do
+        local c = Color3.fromHSV(tick() % 5 / 5, 0.9, 1)
+        MainStroke.Color = c
+        task.wait(0.05)
+    end
+end)
+
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1, -50, 0, 45)
+Title.Position = UDim2.new(0, 20, 0, 5)
+Title.BackgroundTransparency = 1
+Title.Text = "🦇 YUVI DEVTA 👑🐍🦅 //"
+Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Parent = Main
 
 task.spawn(function()
-    while true do
-        if active then
-            local custom = NameBox.Text
-            if custom ~= "" then
-                local obj = objects[math.random(1, #objects)]
-                local fullText = custom .. " tmkx ma " .. obj
-                chat(buildWall(fullText))
-                
-                if obj == "Clock" then
-                    Status.Text = "● COOLDOWN (CLOCK)..."
-                    task.wait(10)
-                    Status.Text = "● RUNNING"
-                else
-                    task.wait(spamSpeed)
-                end
-            end
-        end
-        task.wait(0.1)
+    while Title and Title.Parent do
+        Title.TextColor3 = Color3.fromHSV(tick() % 5 / 5, 1, 1)
+        task.wait(0.05)
+    end
+end)
+
+local Minimize = Instance.new("TextButton", Main)
+Minimize.Size = UDim2.new(0, 30, 0, 30)
+Minimize.Position = UDim2.new(1, -38, 0, 8)
+Minimize.BackgroundColor3 = Color3.fromRGB(25, 20, 35)
+Minimize.Text = "—"
+Minimize.TextSize = 18
+Minimize.Font = Enum.Font.GothamBold
+Minimize.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", Minimize).CornerRadius = UDim.new(0, 8)
+
+local Content = Instance.new("Frame", Main)
+Content.Size = UDim2.new(1, 0, 1, -50)
+Content.Position = UDim2.new(0, 0, 0, 50)
+Content.BackgroundTransparency = 1
+
+-- Target Input Boxes (4 Targets like Piyush/ATZ hub)
+local targets = {}
+for i = 1, 4 do
+    local box = Instance.new("TextBox", Content)
+    box.Size = UDim2.new(0, 200, 0, 38)
+    box.Position = UDim2.new(0, 20 + ((i-1)%2)*215, 0, 10 + math.floor((i-1)/2)*48)
+    box.BackgroundColor3 = Color3.fromRGB(20, 15, 30)
+    box.PlaceholderText = "TARGET " .. i
+    box.PlaceholderColor3 = Color3.fromRGB(120, 110, 140)
+    box.Text = ""
+    box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    box.Font = Enum.Font.GothamBold
+    box.TextSize = 13
+    Instance.new("UICorner", box).CornerRadius = UDim.new(0, 8)
+    local s = Instance.new("UIStroke", box)
+    s.Color = Color3.fromRGB(80, 40, 120)
+    s.Thickness = 1.5
+    targets[i] = box
+end
+
+-- Speed / Delay Box
+local SpeedBox = Instance.new("TextBox", Content)
+SpeedBox.Size = UDim2.new(0, 200, 0, 38)
+SpeedBox.Position = UDim2.new(0, 20, 0, 110)
+SpeedBox.BackgroundColor3 = Color3.fromRGB(20, 15, 30)
+SpeedBox.PlaceholderText = "Delay (sec): 0.8"
+SpeedBox.Text = "0.8"
+SpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedBox.Font = Enum.Font.GothamBold
+SpeedBox.TextSize = 13
+Instance.new("UICorner", SpeedBox).CornerRadius = UDim.new(0, 8)
+
+-- Start & Stop Buttons
+local Start = Instance.new("TextButton", Content)
+Start.Size = UDim2.new(0, 200, 0, 42)
+Start.Position = UDim2.new(0, 20, 0, 162)
+Start.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
+Start.Text = "▶ START SPAM"
+Start.TextColor3 = Color3.fromRGB(255, 255, 255)
+Start.Font = Enum.Font.GothamBold
+Start.TextSize = 14
+Instance.new("UICorner", Start).CornerRadius = UDim.new(0, 9)
+
+local Stop = Instance.new("TextButton", Content)
+Stop.Size = UDim2.new(0, 200, 0, 42)
+Stop.Position = UDim2.new(0, 235, 0, 162)
+Stop.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+Stop.Text = "■ STOP"
+Stop.TextColor3 = Color3.fromRGB(255, 255, 255)
+Stop.Font = Enum.Font.GothamBold
+Stop.TextSize = 14
+Instance.new("UICorner", Stop).CornerRadius = UDim.new(0, 9)
+
+-- Status Footer
+local Status = Instance.new("TextLabel", Content)
+Status.Size = UDim2.new(1, -40, 0, 25)
+Status.Position = UDim2.new(0, 20, 0, 215)
+Status.BackgroundTransparency = 1
+Status.Text = "Status: Idle 💤"
+Status.TextColor3 = Color3.fromRGB(180, 180, 190)
+Status.Font = Enum.Font.GothamBold
+Status.TextSize = 12
+Status.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Minimize Logic
+local minimized = false
+Minimize.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        Minimize.Text = "+"
+        Content.Visible = false
+        TweenService:Create(Main, TweenInfo.new(0.25), {Size = UDim2.new(0, 480, 0, 50)}):Play()
+    else
+        Minimize.Text = "—"
+        Content.Visible = true
+        TweenService:Create(Main, TweenInfo.new(0.25), {Size = UDim2.new(0, 480, 0, 310)}):Play()
     end
 end)
 
 --==================================================
--- UI BUTTONS
+-- SPAM EXECUTION ENGINE
 --==================================================
-
 Start.MouseButton1Click:Connect(function()
+    if active then return end
     active = true
-    Status.Text = "● RUNNING"
-    Start.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
-    Stop.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
-    chat("|| YUVI DEVTA 👑🐍🦅 || STARTED ✨")
+    Status.Text = "Status: 🚀 YUVI DEVTA SPAMMING ACTIVE..."
+    Status.TextColor3 = Color3.fromRGB(0, 255, 120)
+
+    chat("|| YUVI DEVTA 👑🐍🦅 || ✨")
+
+    task.spawn(function()
+        while active do
+            for _, box in ipairs(targets) do
+                if not active then break end
+                if box.Text ~= "" then
+                    local targetName = box.Text:upper()
+                    local obj = objects[math.random(1, #objects)]
+                    local fullText = "[" .. targetName .. "] tmkx ma " .. obj
+                    
+                    chat(buildWall(fullText))
+                    
+                    local sp = tonumber(SpeedBox.Text) or 0.8
+                    task.wait(sp)
+                end
+            end
+            task.wait(0.1)
+        end
+    end)
 end)
 
 Stop.MouseButton1Click:Connect(function()
     active = false
-    Status.Text = "● STOPPED"
-    Start.BackgroundColor3 = Color3.fromRGB(40, 160, 80)
-    Stop.BackgroundColor3 = Color3.fromRGB(120, 30, 30)
+    Status.Text = "Status: ⏹ Stopped."
+    Status.TextColor3 = Color3.fromRGB(255, 100, 100)
     chat("|| YUVI DEVTA 👑🐍🦅 || STOPPED 🛑")
 end)
 
-chat("|| YUVI DEVTA 👑🐍🦅 || LOADED SUCCESSFULLY")
+chat("|| YUVI DEVTA 👑🐍🦅 || READY TO RULE")
